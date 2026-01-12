@@ -1,15 +1,20 @@
-import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import api from '../utils/api';
 import { useI18n } from '../i18n/I18nContext';
 
 function Dashboard({ user, onLogout }) {
   const { t } = useI18n();
+  const navigate = useNavigate();
   const [scenarios, setScenarios] = useState([]);
   const [loading, setLoading] = useState(true);
   const [newScenarioName, setNewScenarioName] = useState('');
   const [newScenarioType, setNewScenarioType] = useState('milk_sale');
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterType, setFilterType] = useState('all');
+  const [openMenuId, setOpenMenuId] = useState(null);
+  const menuRefs = useRef({});
 
   useEffect(() => {
     loadScenarios();
@@ -76,21 +81,122 @@ function Dashboard({ user, onLogout }) {
     return t(`moduleTypes.${type}`) || type;
   };
 
+  const getModuleColor = (type) => {
+    const colorMap = {
+      milk_sale: '#4CAF50',
+      transformation: '#2196F3',
+      lactation: '#FF9800',
+      yield: '#9C27B0',
+      summary: '#F44336'
+    };
+    return colorMap[type] || '#6c757d';
+  };
+
+  const getModuleIcon = (type) => {
+    const iconMap = {
+      milk_sale: '🥛',
+      transformation: '🧀',
+      lactation: '🐄',
+      yield: '📊',
+      summary: '📈'
+    };
+    return iconMap[type] || '📋';
+  };
+
+  // Configurable menu items - easily extendable
+  const getMenuItems = (scenario) => {
+    return [
+      {
+        id: 'duplicate',
+        label: t('duplicate'),
+        icon: '📋',
+        action: 'duplicate',
+        danger: false
+      },
+      {
+        id: 'delete',
+        label: t('delete'),
+        icon: '🗑️',
+        action: 'delete',
+        danger: true
+      }
+      // Add more menu items here as needed
+      // Example:
+      // {
+      //   id: 'edit',
+      //   label: t('edit'),
+      //   icon: '✏️',
+      //   action: 'edit',
+      //   danger: false
+      // }
+    ];
+  };
+
+  // Filter scenarios
+  const filteredScenarios = scenarios.filter(scenario => {
+    const matchesSearch = scenario.name.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesType = filterType === 'all' || scenario.type === filterType;
+    return matchesSearch && matchesType;
+  });
+
+  // Handle card click
+  const handleCardClick = (scenario) => {
+    const path = getModulePath(scenario.type);
+    navigate(path, { state: { scenarioId: scenario.id } });
+  };
+
+  // Handle menu toggle
+  const handleMenuToggle = (e, scenarioId) => {
+    e.stopPropagation(); // Prevent card click
+    setOpenMenuId(openMenuId === scenarioId ? null : scenarioId);
+  };
+
+  // Handle menu action
+  const handleMenuAction = (e, scenarioId, action) => {
+    e.stopPropagation(); // Prevent card click
+    setOpenMenuId(null);
+    
+    if (action === 'duplicate') {
+      handleDuplicateScenario(scenarioId);
+    } else if (action === 'delete') {
+      handleDeleteScenario(scenarioId);
+    }
+  };
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (openMenuId && menuRefs.current[openMenuId] && !menuRefs.current[openMenuId].contains(event.target)) {
+        setOpenMenuId(null);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [openMenuId]);
+
   return (
     <div className="container">
-      <div className="card">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-          <h2>{t('myScenarios')}</h2>
-          <button
-            className="btn btn-primary"
-            onClick={() => setShowCreateForm(!showCreateForm)}
-          >
-            {showCreateForm ? t('cancel') : `+ ${t('newScenario')}`}
-          </button>
+      <div className="dashboard-header">
+        <div>
+          <h1 className="page-title">{t('myScenarios')}</h1>
+          <p className="page-subtitle">{scenarios.length} {scenarios.length === 1 ? 'scenario' : 'scenarios'}</p>
         </div>
+        <button
+          className="btn btn-primary btn-icon"
+          onClick={() => setShowCreateForm(!showCreateForm)}
+        >
+          <span className="btn-icon-text">+</span>
+          {showCreateForm ? t('cancel') : t('newScenario')}
+        </button>
+      </div>
 
-        {showCreateForm && (
-          <form onSubmit={handleCreateScenario} style={{ marginBottom: '20px', padding: '15px', background: '#f8f9fa', borderRadius: '4px' }}>
+      {showCreateForm && (
+        <div className="card card-form">
+          <h3 className="form-title">{t('createScenario')}</h3>
+          <form onSubmit={handleCreateScenario}>
             <div className="form-group">
               <label>{t('scenarioName')}</label>
               <input
@@ -99,11 +205,16 @@ function Dashboard({ user, onLogout }) {
                 onChange={(e) => setNewScenarioName(e.target.value)}
                 required
                 placeholder={t('scenarioNamePlaceholder')}
+                className="form-input"
               />
             </div>
             <div className="form-group">
               <label>{t('moduleType')}</label>
-              <select value={newScenarioType} onChange={(e) => setNewScenarioType(e.target.value)}>
+              <select 
+                value={newScenarioType} 
+                onChange={(e) => setNewScenarioType(e.target.value)}
+                className="form-select"
+              >
                 <option value="milk_sale">{t('moduleTypes.milk_sale')}</option>
                 <option value="transformation">{t('moduleTypes.transformation')}</option>
                 <option value="lactation">{t('moduleTypes.lactation')}</option>
@@ -111,61 +222,118 @@ function Dashboard({ user, onLogout }) {
                 <option value="summary">{t('moduleTypes.summary')}</option>
               </select>
             </div>
-            <button type="submit" className="btn btn-primary">
-              {t('createScenario')}
-            </button>
+            <div className="form-actions">
+              <button type="button" className="btn btn-secondary" onClick={() => setShowCreateForm(false)}>
+                {t('cancel')}
+              </button>
+              <button type="submit" className="btn btn-primary">
+                {t('createScenario')}
+              </button>
+            </div>
           </form>
-        )}
+        </div>
+      )}
 
-        {loading ? (
+      {!showCreateForm && scenarios.length > 0 && (
+        <div className="card card-filters">
+          <div className="filters-container">
+            <div className="search-box">
+              <span className="search-icon">🔍</span>
+              <input
+                type="text"
+                placeholder={t('searchScenarios')}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="search-input"
+              />
+            </div>
+            <select 
+              value={filterType} 
+              onChange={(e) => setFilterType(e.target.value)}
+              className="filter-select"
+            >
+              <option value="all">{t('allTypes')}</option>
+              <option value="milk_sale">{t('moduleTypes.milk_sale')}</option>
+              <option value="transformation">{t('moduleTypes.transformation')}</option>
+              <option value="lactation">{t('moduleTypes.lactation')}</option>
+              <option value="yield">{t('moduleTypes.yield')}</option>
+              <option value="summary">{t('moduleTypes.summary')}</option>
+            </select>
+          </div>
+        </div>
+      )}
+
+      {loading ? (
+        <div className="loading-container">
+          <div className="spinner"></div>
           <p>{t('loadingScenarios')}</p>
-        ) : scenarios.length === 0 ? (
-          <p>{t('noScenarios')}</p>
-        ) : (
-          <table className="table">
-            <thead>
-              <tr>
-                <th>{t('scenarioName')}</th>
-                <th>{t('moduleType')}</th>
-                <th>{t('creationDate')}</th>
-                <th>{t('actions')}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {scenarios.map((scenario) => (
-                <tr key={scenario.id}>
-                  <td>{scenario.name}</td>
-                  <td>{getModuleName(scenario.type)}</td>
-                  <td>{new Date(scenario.created_at).toLocaleDateString()}</td>
-                  <td>
-                    <Link
-                      to={getModulePath(scenario.type)}
-                      state={{ scenarioId: scenario.id }}
-                      className="btn btn-primary"
-                      style={{ marginRight: '5px', textDecoration: 'none', display: 'inline-block' }}
-                    >
-                      {t('open')}
-                    </Link>
-                    <button
-                      className="btn btn-secondary"
-                      onClick={() => handleDuplicateScenario(scenario.id)}
-                      style={{ marginRight: '5px' }}
-                    >
-                      {t('duplicate')}
-                    </button>
-                    <button
-                      className="btn btn-danger"
-                      onClick={() => handleDeleteScenario(scenario.id)}
-                    >
-                      {t('delete')}
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
+        </div>
+      ) : filteredScenarios.length === 0 ? (
+        <div className="card card-empty">
+          <div className="empty-state">
+            <div className="empty-icon">📋</div>
+            <h3>{scenarios.length === 0 ? t('noScenarios') : t('noResults')}</h3>
+            <p>{scenarios.length === 0 ? t('getStarted') : t('tryAdjustingSearch')}</p>
+            {scenarios.length === 0 && (
+              <button className="btn btn-primary" onClick={() => setShowCreateForm(true)}>
+                {t('createScenario')}
+              </button>
+            )}
+          </div>
+        </div>
+      ) : (
+        <div className="scenarios-grid">
+          {filteredScenarios.map((scenario) => (
+            <div 
+              key={scenario.id} 
+              className="scenario-card clickable-card"
+              onClick={() => handleCardClick(scenario)}
+            >
+              <div className="scenario-header">
+                <div className="scenario-icon" style={{ backgroundColor: `${getModuleColor(scenario.type)}20`, color: getModuleColor(scenario.type) }}>
+                  {getModuleIcon(scenario.type)}
+                </div>
+                <div className="scenario-info">
+                  <h3 className="scenario-name">{scenario.name}</h3>
+                  <span className="scenario-badge" style={{ backgroundColor: `${getModuleColor(scenario.type)}15`, color: getModuleColor(scenario.type) }}>
+                    {getModuleName(scenario.type)}
+                  </span>
+                </div>
+                <div 
+                  className="scenario-menu-container"
+                  ref={el => menuRefs.current[scenario.id] = el}
+                  onClick={(e) => handleMenuToggle(e, scenario.id)}
+                >
+                  <button className="scenario-menu-button" title="More options">
+                    <span className="menu-dots">⋯</span>
+                  </button>
+                  {openMenuId === scenario.id && (
+                    <div className="scenario-menu-dropdown">
+                      {getMenuItems(scenario).map((item) => (
+                        <button
+                          key={item.id}
+                          className={`menu-item ${item.danger ? 'menu-item-danger' : ''}`}
+                          onClick={(e) => handleMenuAction(e, scenario.id, item.action)}
+                        >
+                          <span className="menu-icon">{item.icon}</span>
+                          <span>{item.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div className="scenario-meta">
+                <span className="meta-item">
+                  <span className="meta-label">Created:</span>
+                  <span className="meta-value">{new Date(scenario.created_at).toLocaleDateString()}</span>
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
     </div>
   );
 }

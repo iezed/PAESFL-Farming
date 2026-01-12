@@ -55,6 +55,11 @@ export const translations = {
     errorDuplicatingScenario: 'Error duplicating scenario',
     errorDeletingScenario: 'Error deleting scenario',
     scenarioNamePlaceholder: 'E.g: Milk Sale - Scenario 1',
+    searchScenarios: 'Search scenarios...',
+    allTypes: 'All Types',
+    noResults: 'No scenarios match your search',
+    tryAdjustingSearch: 'Try adjusting your search or filter',
+    getStarted: 'Get started by creating your first scenario',
     
     // Module Types
     moduleTypes: {
@@ -216,6 +221,11 @@ export const translations = {
     errorDuplicatingScenario: 'Error al duplicar escenario',
     errorDeletingScenario: 'Error al eliminar escenario',
     scenarioNamePlaceholder: 'Ej: Venta de Leche - Escenario 1',
+    searchScenarios: 'Buscar escenarios...',
+    allTypes: 'Todos los Tipos',
+    noResults: 'No hay escenarios que coincidan con tu búsqueda',
+    tryAdjustingSearch: 'Intenta ajustar tu búsqueda o filtro',
+    getStarted: 'Comienza creando tu primer escenario',
     
     // Module Types
     moduleTypes: {
