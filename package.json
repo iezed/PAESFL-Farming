@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "MVP Web - Simuladores Productivos y Económicos para Ganadería",
   "main": "server/index.js",
+  "type": "module",
   "engines": {
     "node": "24.x"
   },

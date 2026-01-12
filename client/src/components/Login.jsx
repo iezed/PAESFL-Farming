@@ -26,7 +26,9 @@ function Login({ onLogin }) {
       onLogin(response.data.user, response.data.token);
       navigate('/dashboard');
     } catch (err) {
-      setError(err.response?.data?.error || 'Error al iniciar sesión');
+      const errorMessage = err.response?.data?.error || err.message || 'Error al iniciar sesión';
+      setError(typeof errorMessage === 'string' ? errorMessage : 'Error al iniciar sesión');
+      console.error('Login error:', err);
     } finally {
       setLoading(false);
     }
