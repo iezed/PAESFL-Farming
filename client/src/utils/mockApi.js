@@ -1,6 +1,8 @@
 // Mock API service for demo mode
 // Uses localStorage to persist data across sessions
 
+import { getInitialMockData, calculateMockResults } from './mockData.js';
+
 const STORAGE_KEY = 'mvp_web_mock_data';
 const MOCK_USER_KEY = 'mvp_web_mock_user';
 
@@ -11,7 +13,6 @@ function getMockData() {
     return JSON.parse(stored);
   }
   // Initialize with default data
-  const { getInitialMockData } = require('./mockData');
   const initialData = getInitialMockData();
   saveMockData(initialData);
   return initialData;
@@ -69,24 +70,6 @@ const mockApi = {
         localStorage.setItem(MOCK_USER_KEY, JSON.stringify(userData));
         return { data: { user: userData, token } };
       }
-    }
-
-    // Scenarios endpoints
-    if (endpoint === '/scenarios' || endpoint.startsWith('/scenarios?')) {
-      const mockData = getMockData();
-      const userId = getCurrentUserId();
-      let userScenarios = mockData.scenarios.filter(s => s.user_id === userId);
-      
-      // Handle query parameters
-      if (endpoint.includes('?')) {
-        const params = new URLSearchParams(endpoint.split('?')[1]);
-        const type = params.get('type');
-        if (type) {
-          userScenarios = userScenarios.filter(s => s.type === type);
-        }
-      }
-      
-      return { data: userScenarios };
     }
 
     // POST /scenarios (create new scenario)
@@ -167,12 +150,12 @@ const mockApi = {
             results,
           },
         };
+      }
     }
 
     if (endpoint === '/scenarios/compare') {
       const { scenarioIds } = data;
       const mockData = getMockData();
-      const { calculateMockResults } = require('./mockData');
       
       const comparisons = scenarioIds.map(id => {
         const scenario = mockData.scenarios.find(s => s.id === id);
@@ -221,7 +204,6 @@ const mockApi = {
       }
 
       // Recalculate results
-      const { calculateMockResults } = require('./mockData');
       const results = calculateMockResults(scenarioId, mockData);
       if (results) {
         const resultIndex = mockData.results.findIndex(r => r.scenario_id === scenarioId);
@@ -262,7 +244,6 @@ const mockApi = {
       }
 
       // Recalculate results
-      const { calculateMockResults } = require('./mockData');
       const results = calculateMockResults(scenarioId, mockData);
       if (results) {
         const resultIndex = mockData.results.findIndex(r => r.scenario_id === scenarioId);
