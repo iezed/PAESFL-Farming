@@ -2,12 +2,6 @@
   "version": 2,
   "buildCommand": "npm install && cd server && npm install && cd ../client && npm install && npm run build",
   "outputDirectory": "client/dist",
-  "functions": {
-    "api/index.js": {
-      "runtime": "nodejs18.x",
-      "includeFiles": "server/**"
-    }
-  },
   "rewrites": [
     {
       "source": "/api/(.*)",
