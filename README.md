@@ -213,6 +213,29 @@ npm run build
 - Los resultados se recalculan automáticamente al guardar datos
 - El sistema soporta múltiples usuarios con aislamiento completo de datos
 
+## Despliegue (Deployment)
+
+Este proyecto está configurado para desplegarse en **Vercel** (frontend + backend) y **Supabase** (base de datos).
+
+### Guía de Despliegue
+
+Consulta el archivo [DEPLOYMENT.md](./DEPLOYMENT.md) para instrucciones detalladas paso a paso sobre cómo desplegar la aplicación.
+
+### Resumen Rápido
+
+1. **Supabase**: Crear proyecto, ejecutar `schema.sql`, obtener connection string
+2. **Vercel**: Conectar repositorio Git, configurar variables de entorno, desplegar
+3. **Variables de Entorno Requeridas**:
+   - `DATABASE_URL`: Connection string de Supabase
+   - `JWT_SECRET`: Clave secreta para JWT (mínimo 32 caracteres)
+   - `NODE_ENV`: `production`
+
+### Archivos de Configuración
+
+- `vercel.json`: Configuración de Vercel para frontend y backend
+- `api/index.js`: Punto de entrada para funciones serverless de Vercel
+- `server/db/pool.js`: Configuración de conexión a Supabase
+
 ## Próximos Pasos (Futuras Mejoras)
 
 - [ ] Validaciones más robustas de datos de entrada

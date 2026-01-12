@@ -28,9 +28,12 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: 'MVP Web API is running' });
 });
 
-// Start server
-app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
-});
+// Start server (only in development or when not on Vercel)
+if (process.env.VERCEL !== '1') {
+  app.listen(PORT, () => {
+    console.log(`Server running on http://localhost:${PORT}`);
+  });
+}
 
+// Export for Vercel serverless functions
 export default app;

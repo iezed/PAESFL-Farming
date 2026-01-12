@@ -6,13 +6,24 @@ let pool = null;
 export function createPool() {
   if (pool) return pool;
 
-  pool = new Pool({
-    host: process.env.DB_HOST || 'localhost',
-    port: process.env.DB_PORT || 5432,
-    database: process.env.DB_NAME || 'mvp_ganaderia',
-    user: process.env.DB_USER || 'postgres',
-    password: process.env.DB_PASSWORD || 'postgres',
-  });
+  // Support Supabase connection string (DATABASE_URL) or individual parameters
+  if (process.env.DATABASE_URL) {
+    // Supabase provides a connection string
+    pool = new Pool({
+      connectionString: process.env.DATABASE_URL,
+      ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+    });
+  } else {
+    // Fallback to individual connection parameters
+    pool = new Pool({
+      host: process.env.DB_HOST || 'localhost',
+      port: process.env.DB_PORT || 5432,
+      database: process.env.DB_NAME || 'mvp_ganaderia',
+      user: process.env.DB_USER || 'postgres',
+      password: process.env.DB_PASSWORD || 'postgres',
+      ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+    });
+  }
 
   return pool;
 }

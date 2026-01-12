@@ -1,8 +1,11 @@
 import axios from 'axios';
 import { getAuthToken, removeAuthToken } from './auth';
 
+// Use environment variable for API URL in production, or relative path in development
+const apiBaseURL = import.meta.env.VITE_API_URL || '/api';
+
 const api = axios.create({
-  baseURL: '/api',
+  baseURL: apiBaseURL,
   headers: {
     'Content-Type': 'application/json',
   },
