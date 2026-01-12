@@ -8,10 +8,12 @@ export function createPool() {
 
   // Support Supabase connection string (DATABASE_URL) or individual parameters
   if (process.env.DATABASE_URL) {
-    // Supabase provides a connection string
+    // Supabase requires SSL for all connections
+    const isSupabase = process.env.DATABASE_URL.includes('supabase.co');
     pool = new Pool({
       connectionString: process.env.DATABASE_URL,
-      ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+      // Supabase uses self-signed certificates, so we need to rejectUnauthorized: false
+      ssl: isSupabase ? { rejectUnauthorized: false } : (process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false),
     });
   } else {
     // Fallback to individual connection parameters
