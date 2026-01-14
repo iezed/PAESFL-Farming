@@ -1,7 +1,7 @@
 import express from 'express';
 import bcrypt from 'bcryptjs';
 import { getPool } from '../db/pool.js';
-import { generateToken } from '../middleware/auth.js';
+import { generateToken, authenticateToken } from '../middleware/auth.js';
 
 const router = express.Router();
 
@@ -85,6 +85,39 @@ router.post('/login', async (req, res) => {
         error: 'Database connection failed. Please check your database configuration.' 
       });
     }
+    const errorMessage = error.message || 'Internal server error';
+    res.status(500).json({ error: errorMessage });
+  }
+});
+
+// Get current user profile
+router.get('/me', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    
+    let pool;
+    try {
+      pool = getPool();
+    } catch (dbError) {
+      console.error('Database connection error:', dbError);
+      return res.status(500).json({ 
+        error: 'Database connection failed. Please check your environment variables.' 
+      });
+    }
+
+    const result = await pool.query(
+      'SELECT id, email, name FROM users WHERE id = $1',
+      [userId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const user = result.rows[0];
+    res.json({ user });
+  } catch (error) {
+    console.error('Get user profile error:', error);
     const errorMessage = error.message || 'Internal server error';
     res.status(500).json({ error: errorMessage });
   }

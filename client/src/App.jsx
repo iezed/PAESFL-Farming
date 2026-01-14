@@ -4,12 +4,14 @@ import { I18nProvider, useI18n } from './i18n/I18nContext';
 import Layout from './components/Layout';
 import Login from './components/Login';
 import Dashboard from './components/Dashboard';
+import Profile from './components/Profile';
 import Module1Production from './components/modules/Module1Production';
 import Module2Transformation from './components/modules/Module2Transformation';
 import Module3Lactation from './components/modules/Module3Lactation';
 import Module4Yield from './components/modules/Module4Yield';
 import Module5Summary from './components/modules/Module5Summary';
-import { getAuthToken, setAuthToken, removeAuthToken } from './utils/auth';
+import { getAuthToken, setAuthToken, removeAuthToken, getUser, setUser as saveUserToStorage } from './utils/auth';
+import api from './utils/api';
 
 function AppContent() {
   const [user, setUser] = useState(null);
@@ -17,17 +19,45 @@ function AppContent() {
   const { t } = useI18n();
 
   useEffect(() => {
-    const token = getAuthToken();
-    if (token) {
-      // In a real app, verify token with backend
-      setUser({ token });
-    }
-    setLoading(false);
+    const fetchUserData = async () => {
+      const token = getAuthToken();
+      if (token) {
+        try {
+          // Fetch fresh user data from backend
+          const response = await api.get('/auth/me');
+          const userData = response.data.user;
+          const userWithToken = { ...userData, token };
+          setUser(userWithToken);
+          saveUserToStorage(userWithToken);
+        } catch (error) {
+          console.error('Error fetching user data:', error);
+          // Fallback to localStorage if API call fails
+          const savedUser = getUser();
+          if (savedUser) {
+            setUser(savedUser);
+          } else {
+            // If no saved user and API fails, token might be invalid
+            removeAuthToken();
+          }
+        }
+      }
+      setLoading(false);
+    };
+
+    fetchUserData();
   }, []);
 
   const handleLogin = (userData, token) => {
     setAuthToken(token);
-    setUser({ ...userData, token });
+    const userWithToken = { ...userData, token };
+    setUser(userWithToken);
+    saveUserToStorage(userWithToken);
+  };
+
+  const handleUserUpdate = (updatedUser) => {
+    const userWithToken = { ...updatedUser, token: updatedUser.token || getAuthToken() };
+    setUser(userWithToken);
+    saveUserToStorage(userWithToken);
   };
 
   const handleLogout = () => {
@@ -107,6 +137,16 @@ function AppContent() {
           element={
             user ? (
               <Module5Summary user={user} />
+            ) : (
+              <Navigate to="/login" />
+            )
+          }
+        />
+        <Route
+          path="/profile"
+          element={
+            user ? (
+              <Profile user={user} onUserUpdate={handleUserUpdate} />
             ) : (
               <Navigate to="/login" />
             )

@@ -1017,6 +1017,249 @@ label {
   box-shadow: 0 0 0 3px rgba(45, 80, 22, 0.1);
 }
 
+/* User Avatar Styles */
+.user-avatar-container {
+  position: relative;
+  display: inline-block;
+}
+
+.user-avatar-button {
+  background: transparent;
+  border: 2px solid #e0e0e0;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  cursor: pointer;
+  overflow: hidden;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.user-avatar-button:hover {
+  border-color: #2d5016;
+  box-shadow: 0 2px 8px rgba(45, 80, 22, 0.2);
+  transform: scale(1.05);
+}
+
+.user-avatar-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+.user-avatar-placeholder {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #2d5016 0%, #4a7c2a 100%);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 16px;
+  border-radius: 50%;
+}
+
+.user-avatar-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  min-width: 280px;
+  z-index: 1000;
+  border: 1px solid #e0e0e0;
+  animation: dropdownFadeIn 0.2s ease;
+  overflow: hidden;
+}
+
+.avatar-dropdown-header {
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background-color: #f8f9fa;
+}
+
+.avatar-dropdown-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+  border: 2px solid #e0e0e0;
+}
+
+.avatar-dropdown-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.avatar-dropdown-placeholder {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #2d5016 0%, #4a7c2a 100%);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 20px;
+}
+
+.avatar-dropdown-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.avatar-dropdown-name {
+  font-weight: 600;
+  color: #2d3748;
+  font-size: 15px;
+  margin-bottom: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.avatar-dropdown-email {
+  font-size: 13px;
+  color: #718096;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.avatar-dropdown-divider {
+  height: 1px;
+  background-color: #e0e0e0;
+  margin: 8px 0;
+}
+
+.avatar-dropdown-item {
+  width: 100%;
+  padding: 12px 20px;
+  border: none;
+  background: white;
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+  color: #2d3748;
+  transition: background-color 0.2s;
+  font-weight: 500;
+}
+
+.avatar-dropdown-item:hover {
+  background-color: #f8f9fa;
+}
+
+.avatar-dropdown-item-danger {
+  color: #dc3545;
+}
+
+.avatar-dropdown-item-danger:hover {
+  background-color: #fff5f5;
+}
+
+.avatar-dropdown-icon {
+  font-size: 18px;
+  width: 24px;
+  text-align: center;
+}
+
+/* Profile Page Styles */
+.profile-content {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.card-section-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #2d3748;
+  margin: 0 0 24px 0;
+  padding-bottom: 12px;
+  border-bottom: 2px solid #e8f0e0;
+}
+
+.avatar-section {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.avatar-preview {
+  flex-shrink: 0;
+}
+
+.avatar-image-large {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 4px solid #e8f0e0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.avatar-placeholder-large {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #2d5016 0%, #4a7c2a 100%);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 48px;
+  border: 4px solid #e8f0e0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.avatar-upload {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.form-hint {
+  display: block;
+  font-size: 12px;
+  color: #718096;
+  margin-top: 4px;
+}
+
+.error-message {
+  background-color: #fee;
+  color: #c33;
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  font-size: 14px;
+  border: 1px solid #fcc;
+}
+
+.success-message {
+  background-color: #d4edda;
+  color: #155724;
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  font-size: 14px;
+  border: 1px solid #c3e6cb;
+}
+
 /* Footer Styles */
 .site-footer {
   background-color: #fff;

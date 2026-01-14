@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { useI18n } from '../i18n/I18nContext';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { getAuthToken } from '../utils/auth';
+import { getAvatar } from '../utils/avatar';
 
 function Sidebar({ user, onLogout }) {
   const { t, language, changeLanguage } = useI18n();
@@ -117,17 +118,120 @@ function Settings({ showSidebar, setShowSidebar, showFooter, setShowFooter }) {
   );
 }
 
+function UserAvatar({ user, onLogout }) {
+  const { t } = useI18n();
+  const navigate = useNavigate();
+  const [isOpen, setIsOpen] = useState(false);
+  const [avatar, setAvatar] = useState(getAvatar());
+  const avatarRef = useRef(null);
+
+  // Update avatar when localStorage changes
+  useEffect(() => {
+    const handleStorageChange = () => {
+      setAvatar(getAvatar());
+    };
+
+    // Listen for storage events (when avatar is updated in Profile)
+    window.addEventListener('storage', handleStorageChange);
+    
+    // Also check periodically (for same-tab updates)
+    const interval = setInterval(() => {
+      const currentAvatar = getAvatar();
+      if (currentAvatar !== avatar) {
+        setAvatar(currentAvatar);
+      }
+    }, 500);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      clearInterval(interval);
+    };
+  }, [avatar]);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (avatarRef.current && !avatarRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isOpen]);
+
+  const handleProfileClick = () => {
+    setIsOpen(false);
+    navigate('/profile');
+  };
+
+  const handleLogoutClick = () => {
+    setIsOpen(false);
+    onLogout();
+  };
+
+  return (
+    <div className="user-avatar-container" ref={avatarRef}>
+      <button
+        className="user-avatar-button"
+        onClick={() => setIsOpen(!isOpen)}
+        title={user?.name || user?.email}
+      >
+        {avatar ? (
+          <img src={avatar} alt="Avatar" className="user-avatar-image" />
+        ) : (
+          <div className="user-avatar-placeholder">
+            {(user?.name || user?.email || 'U').charAt(0).toUpperCase()}
+          </div>
+        )}
+      </button>
+      {isOpen && (
+        <div className="user-avatar-dropdown">
+          <div className="avatar-dropdown-header">
+            <div className="avatar-dropdown-avatar">
+              {avatar ? (
+                <img src={avatar} alt="Avatar" className="avatar-dropdown-image" />
+              ) : (
+                <div className="avatar-dropdown-placeholder">
+                  {(user?.name || user?.email || 'U').charAt(0).toUpperCase()}
+                </div>
+              )}
+            </div>
+            <div className="avatar-dropdown-info">
+              <div className="avatar-dropdown-name">{user?.name || 'User'}</div>
+              <div className="avatar-dropdown-email">{user?.email}</div>
+            </div>
+          </div>
+          <div className="avatar-dropdown-divider"></div>
+          <button className="avatar-dropdown-item" onClick={handleProfileClick}>
+            <span className="avatar-dropdown-icon">👤</span>
+            <span>{t('profile') || 'Profile'}</span>
+          </button>
+          <button className="avatar-dropdown-item avatar-dropdown-item-danger" onClick={handleLogoutClick}>
+            <span className="avatar-dropdown-icon">🚪</span>
+            <span>{t('logout')}</span>
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function Header({ user, onLogout, showSidebar, setShowSidebar, showFooter, setShowFooter }) {
   const { t, language, changeLanguage } = useI18n();
   const isAuthenticated = !!getAuthToken();
-  const hasSidebar = isAuthenticated;
+  const hasSidebar = isAuthenticated && showSidebar;
 
   return (
     <header className="site-header">
       <div className="header-content">
         {!hasSidebar && (
           <div className="header-left">
-            <Link to="/" className="logo-link">
+            <Link to="/dashboard" className="logo-link">
               <div className="logo-container">
                 <img src="/logo.png" alt="Livestock Simulators Logo" className="logo-image" />
               </div>
@@ -150,11 +254,6 @@ function Header({ user, onLogout, showSidebar, setShowSidebar, showFooter, setSh
           )}
         </nav>
         <div className="header-right">
-          {isAuthenticated && user && (
-            <span className="user-greeting">
-              {t('hello')}, {user?.name || user?.email}
-            </span>
-          )}
           {!isAuthenticated && (
             <div className="language-switcher">
               <select
@@ -185,12 +284,8 @@ function Header({ user, onLogout, showSidebar, setShowSidebar, showFooter, setSh
                 showFooter={showFooter}
                 setShowFooter={setShowFooter}
               />
+              <UserAvatar user={user} onLogout={onLogout} />
             </>
-          )}
-          {isAuthenticated && (
-            <button className="btn btn-secondary" onClick={onLogout}>
-              {t('logout')}
-            </button>
           )}
         </div>
       </div>
