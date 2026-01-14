@@ -198,16 +198,26 @@ function Module3Lactation({ user }) {
   };
 
   const handleCalculate = () => {
-    const cycleDays = lactationData.lactation_days + lactationData.dry_days;
+    const lactationDays = Number(lactationData.lactation_days) || 0;
+    const dryDays = Number(lactationData.dry_days) || 0;
+    const productiveLifeYears = Number(lactationData.productive_life_years) || 0;
+    const replacementRate = Number(lactationData.replacement_rate) || 0;
+    
+    const dailyProduction = Number(productionData.daily_production_liters) || 0;
+    const animalsCount = Number(productionData.animals_count) || 0;
+    const productionDays = Number(productionData.production_days) || 0;
+    const milkPrice = Number(productionData.milk_price_per_liter) || 0;
+    
+    const cycleDays = lactationDays + dryDays;
     const cyclesPerYear = cycleDays > 0 ? 365 / cycleDays : 0;
-    const productiveDays = lactationData.productive_life_years * 365;
-    const effectiveProductionDays = productiveDays * (lactationData.lactation_days / (cycleDays || 1));
+    const productiveDays = productiveLifeYears * 365;
+    const effectiveProductionDays = productiveDays * (lactationDays / (cycleDays || 1));
     
-    const baseProduction = productionData.daily_production_liters * productionData.animals_count;
-    const adjustedProduction = baseProduction * (effectiveProductionDays / productiveDays);
-    const totalProductionLiters = adjustedProduction * productionData.production_days;
+    const baseProduction = dailyProduction * animalsCount;
+    const adjustedProduction = baseProduction * (effectiveProductionDays / (productiveDays || 1));
+    const totalProductionLiters = adjustedProduction * productionDays;
     
-    const totalRevenue = productionData.milk_price_per_liter * totalProductionLiters;
+    const totalRevenue = milkPrice * totalProductionLiters;
     const costPerLiter = 0.5; // Simplified
     const totalCosts = costPerLiter * totalProductionLiters;
     const grossMargin = totalRevenue - totalCosts;
@@ -223,19 +233,22 @@ function Module3Lactation({ user }) {
       totalCosts,
       grossMargin,
       marginPercentage,
-      replacementRate: lactationData.replacement_rate,
+      replacementRate,
     });
   };
 
   const cycleData = results ? [
-    { name: 'Días Lactancia', value: lactationData.lactation_days },
-    { name: 'Días Secos', value: lactationData.dry_days },
-  ] : [];
+    { name: 'Días Lactancia', value: Number(lactationData.lactation_days) || 0 },
+    { name: 'Días Secos', value: Number(lactationData.dry_days) || 0 },
+  ].filter(item => !isNaN(item.value)) : [];
 
   const productionImpact = results ? [
-    { name: 'Producción Base', value: productionData.daily_production_liters * productionData.animals_count * productionData.production_days },
-    { name: 'Producción Ajustada', value: results.totalProductionLiters },
-  ] : [];
+    { 
+      name: 'Producción Base', 
+      value: Number(productionData.daily_production_liters || 0) * Number(productionData.animals_count || 0) * Number(productionData.production_days || 0) 
+    },
+    { name: 'Producción Ajustada', value: Number(results.totalProductionLiters) || 0 },
+  ].filter(item => !isNaN(item.value)) : [];
 
   return (
     <div className="container">
@@ -379,43 +392,43 @@ function Module3Lactation({ user }) {
                   <tbody>
                     <tr>
                       <td><strong>Días del Ciclo</strong></td>
-                      <td>{results.cycleDays?.toFixed(0)} días</td>
+                      <td>{Number(results.cycleDays || 0).toFixed(0)} días</td>
                     </tr>
                     <tr>
                       <td><strong>Ciclos por Año</strong></td>
-                      <td>{results.cyclesPerYear?.toFixed(2)}</td>
+                      <td>{Number(results.cyclesPerYear || 0).toFixed(2)}</td>
                     </tr>
                     <tr>
                       <td><strong>Días Productivos Totales</strong></td>
-                      <td>{results.productiveDays?.toFixed(0)} días</td>
+                      <td>{Number(results.productiveDays || 0).toFixed(0)} días</td>
                     </tr>
                     <tr>
                       <td><strong>Días Efectivos de Producción</strong></td>
-                      <td>{results.effectiveProductionDays?.toFixed(0)} días</td>
+                      <td>{Number(results.effectiveProductionDays || 0).toFixed(0)} días</td>
                     </tr>
                     <tr>
                       <td><strong>Producción Total Ajustada (litros)</strong></td>
-                      <td>{results.totalProductionLiters?.toLocaleString('es-ES', { maximumFractionDigits: 2 })}</td>
+                      <td>{Number(results.totalProductionLiters || 0).toLocaleString('es-ES', { maximumFractionDigits: 2 })}</td>
                     </tr>
                     <tr>
                       <td><strong>Ingresos Totales</strong></td>
-                      <td>${results.totalRevenue?.toLocaleString('es-ES', { maximumFractionDigits: 2 })}</td>
+                      <td>${Number(results.totalRevenue || 0).toLocaleString('es-ES', { maximumFractionDigits: 2 })}</td>
                     </tr>
                     <tr>
                       <td><strong>Costos Totales</strong></td>
-                      <td>${results.totalCosts?.toLocaleString('es-ES', { maximumFractionDigits: 2 })}</td>
+                      <td>${Number(results.totalCosts || 0).toLocaleString('es-ES', { maximumFractionDigits: 2 })}</td>
                     </tr>
                     <tr>
                       <td><strong>Margen Bruto</strong></td>
-                      <td>${results.grossMargin?.toLocaleString('es-ES', { maximumFractionDigits: 2 })}</td>
+                      <td>${Number(results.grossMargin || 0).toLocaleString('es-ES', { maximumFractionDigits: 2 })}</td>
                     </tr>
                     <tr>
                       <td><strong>Margen (%)</strong></td>
-                      <td>{results.marginPercentage?.toFixed(2)}%</td>
+                      <td>{Number(results.marginPercentage || 0).toFixed(2)}%</td>
                     </tr>
                     <tr>
                       <td><strong>Tasa de Reemplazo</strong></td>
-                      <td>{results.replacementRate?.toFixed(2)}%</td>
+                      <td>{Number(results.replacementRate || 0).toFixed(2)}%</td>
                     </tr>
                   </tbody>
                 </table>
