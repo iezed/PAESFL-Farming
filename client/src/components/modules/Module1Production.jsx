@@ -28,12 +28,16 @@ function Module1Production({ user }) {
   const [selectedScenario, setSelectedScenario] = useState(null);
   const [loading, setLoading] = useState(false);
   const [alertModal, setAlertModal] = useState({ isOpen: false, message: '', type: 'success' });
+  const [viewPeriod, setViewPeriod] = useState('lactation'); // 'daily', 'monthly', 'lactation'
 
   useEffect(() => {
-    loadScenarios();
-    if (scenarioId) {
-      loadScenario(scenarioId);
-    }
+    const initialize = async () => {
+      await loadScenarios();
+      if (scenarioId) {
+        await loadScenario(scenarioId);
+      }
+    };
+    initialize();
   }, [scenarioId]);
 
   const loadScenarios = async () => {
@@ -130,10 +134,8 @@ function Module1Production({ user }) {
   };
 
   const handleInputFocus = (e) => {
-    // Select all text when focused if value is 0, so user can immediately type to replace it
-    if (parseFloat(e.target.value) === 0) {
-      e.target.select();
-    }
+    // Always select all text when focused for easy replacement
+    e.target.select();
   };
 
   const handleSave = async () => {
@@ -189,22 +191,62 @@ function Module1Production({ user }) {
       margin_percentage: marginPercentage,
       revenue_per_liter: formData.milk_price_per_liter,
       cost_per_liter: costPerLiter,
+      // Store base values for period calculations
+      daily_production: formData.daily_production_liters * formData.animals_count,
+      production_days: formData.production_days,
     });
   };
 
+  // Calculate values based on selected period
+  const getDisplayValues = () => {
+    if (!results) return null;
+    
+    const dailyProduction = results.daily_production || 0;
+    const productionDays = results.production_days || 1;
+    
+    switch (viewPeriod) {
+      case 'daily':
+        return {
+          production: dailyProduction,
+          revenue: (results.total_revenue / productionDays) || 0,
+          costs: (results.total_costs / productionDays) || 0,
+          margin: (results.gross_margin / productionDays) || 0,
+          label: t('daily')
+        };
+      case 'monthly':
+        const daysInMonth = 30;
+        return {
+          production: dailyProduction * daysInMonth,
+          revenue: (results.total_revenue / productionDays) * daysInMonth || 0,
+          costs: (results.total_costs / productionDays) * daysInMonth || 0,
+          margin: (results.gross_margin / productionDays) * daysInMonth || 0,
+          label: t('monthly')
+        };
+      case 'lactation':
+      default:
+        return {
+          production: results.total_production_liters,
+          revenue: results.total_revenue,
+          costs: results.total_costs,
+          margin: results.gross_margin,
+          label: t('perLactation')
+        };
+    }
+  };
+
   const chartData = results ? [
-    { name: 'Ingresos', value: results.total_revenue },
-    { name: 'Costos', value: results.total_costs },
-    { name: 'Margen', value: results.gross_margin },
-  ] : [];
+    { name: 'Ingresos', value: Number(results.total_revenue) || 0 },
+    { name: 'Costos', value: Number(results.total_costs) || 0 },
+    { name: 'Margen', value: Number(results.gross_margin) || 0 },
+  ].filter(item => !isNaN(item.value)) : [];
 
   const costBreakdown = formData ? [
-    { name: 'Alimento', value: formData.feed_cost_per_liter },
-    { name: 'Mano de Obra', value: formData.labor_cost_per_liter },
-    { name: 'Salud', value: formData.health_cost_per_liter },
-    { name: 'Infraestructura', value: formData.infrastructure_cost_per_liter },
-    { name: 'Otros', value: formData.other_costs_per_liter },
-  ] : [];
+    { name: 'Alimento', value: Number(formData.feed_cost_per_liter) || 0 },
+    { name: 'Mano de Obra', value: Number(formData.labor_cost_per_liter) || 0 },
+    { name: 'Salud', value: Number(formData.health_cost_per_liter) || 0 },
+    { name: 'Infraestructura', value: Number(formData.infrastructure_cost_per_liter) || 0 },
+    { name: 'Otros', value: Number(formData.other_costs_per_liter) || 0 },
+  ].filter(item => !isNaN(item.value)) : [];
 
   return (
     <div className="container">
@@ -356,46 +398,73 @@ function Module1Production({ user }) {
           {results && (
             <>
               <div className="card">
-                <h2>{t('results')}</h2>
-                <table className="table">
-                  <tbody>
-                    <tr>
-                      <td><strong>{t('totalProduction')}</strong></td>
-                      <td>{results.total_production_liters?.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
-                    </tr>
-                    <tr>
-                      <td><strong>{t('totalRevenue')}</strong></td>
-                      <td>${results.total_revenue?.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
-                    </tr>
-                    <tr>
-                      <td><strong>{t('totalCosts')}</strong></td>
-                      <td>${results.total_costs?.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
-                    </tr>
-                    <tr>
-                      <td><strong>{t('grossMargin')}</strong></td>
-                      <td>${results.gross_margin?.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
-                    </tr>
-                    <tr>
-                      <td><strong>{t('marginPercentage')}</strong></td>
-                      <td>{typeof results.margin_percentage === 'number' ? results.margin_percentage.toFixed(2) : '0.00'}%</td>
-                    </tr>
-                    <tr>
-                      <td><strong>{t('revenuePerLiter')}</strong></td>
-                      <td>${typeof results.revenue_per_liter === 'number' ? results.revenue_per_liter.toFixed(2) : '0.00'}</td>
-                    </tr>
-                    <tr>
-                      <td><strong>{t('costPerLiter')}</strong></td>
-                      <td>${typeof results.cost_per_liter === 'number' ? results.cost_per_liter.toFixed(2) : '0.00'}</td>
-                    </tr>
-                  </tbody>
-                </table>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                  <h2 style={{ margin: 0 }}>{t('results')}</h2>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <label style={{ fontWeight: 'bold' }}>{t('viewPeriod')}:</label>
+                    <select 
+                      value={viewPeriod} 
+                      onChange={(e) => setViewPeriod(e.target.value)}
+                      style={{ padding: '8px 12px', borderRadius: '4px', border: '1px solid #ccc' }}
+                    >
+                      <option value="daily">{t('daily')}</option>
+                      <option value="monthly">{t('monthly')}</option>
+                      <option value="lactation">{t('perLactation')}</option>
+                    </select>
+                  </div>
+                </div>
+                {(() => {
+                  const displayValues = getDisplayValues();
+                  return (
+                    <>
+                      <div style={{ marginBottom: '15px', padding: '10px', background: '#f0f7ff', borderRadius: '4px' }}>
+                        <p style={{ margin: 0, fontSize: '0.9em', color: '#0066cc' }}>
+                          <strong>{t('note')}:</strong> Mostrando valores para período: <strong>{displayValues.label}</strong>
+                        </p>
+                      </div>
+                            <table className="table">
+                        <tbody>
+                          <tr>
+                            <td><strong>{t('totalProduction')}</strong></td>
+                            <td>{displayValues.production?.toLocaleString(undefined, { maximumFractionDigits: 2 })} L</td>
+                          </tr>
+                          <tr>
+                            <td><strong>{t('totalRevenue')}</strong></td>
+                            <td>${displayValues.revenue?.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
+                          </tr>
+                          <tr>
+                            <td><strong>{t('totalCosts')}</strong></td>
+                            <td>${displayValues.costs?.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
+                          </tr>
+                          <tr>
+                            <td><strong>{t('grossMargin')}</strong></td>
+                            <td>${displayValues.margin?.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
+                          </tr>
+                          <tr>
+                            <td><strong>{t('marginPercentage')}</strong></td>
+                            <td>{typeof results.margin_percentage === 'number' ? results.margin_percentage.toFixed(2) : '0.00'}%</td>
+                          </tr>
+                          <tr>
+                            <td><strong>{t('revenuePerLiter')}</strong></td>
+                            <td>${typeof results.revenue_per_liter === 'number' ? results.revenue_per_liter.toFixed(2) : '0.00'}</td>
+                          </tr>
+                          <tr>
+                            <td><strong>{t('costPerLiter')}</strong></td>
+                            <td>${typeof results.cost_per_liter === 'number' ? results.cost_per_liter.toFixed(2) : '0.00'}</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </>
+                  );
+                })()}
               </div>
 
               <div className="card">
                 <h2>{t('visualization')}</h2>
                 <h3 style={{ marginBottom: '15px' }}>{t('income')} vs {t('totalCosts')} vs {t('margin')}</h3>
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={chartData}>
+                {chartData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height={300}>
+                    <BarChart data={chartData}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="name" />
                     <YAxis />
@@ -404,10 +473,16 @@ function Module1Production({ user }) {
                     <Bar dataKey="value" fill="#8884d8" />
                   </BarChart>
                 </ResponsiveContainer>
+                ) : (
+                  <div style={{ padding: '40px', textAlign: 'center', background: '#f5f5f5', borderRadius: '8px' }}>
+                    <p style={{ color: '#666', margin: 0 }}>No hay datos para mostrar. Complete los campos y presione "Calcular".</p>
+                  </div>
+                )}
 
                 <h3 style={{ marginTop: '30px', marginBottom: '15px' }}>Desglose de Costos</h3>
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={costBreakdown}>
+                {costBreakdown.length > 0 ? (
+                  <ResponsiveContainer width="100%" height={300}>
+                    <BarChart data={costBreakdown}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="name" />
                     <YAxis />
@@ -416,6 +491,11 @@ function Module1Production({ user }) {
                     <Bar dataKey="value" fill="#82ca9d" />
                   </BarChart>
                 </ResponsiveContainer>
+                ) : (
+                  <div style={{ padding: '40px', textAlign: 'center', background: '#f5f5f5', borderRadius: '8px' }}>
+                    <p style={{ color: '#666', margin: 0 }}>No hay datos de costos para mostrar.</p>
+                  </div>
+                )}
               </div>
             </>
           )}

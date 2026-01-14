@@ -25,7 +25,7 @@ function Sidebar({ user, onLogout }) {
       <div className="sidebar-header">
         <Link to="/dashboard" className="logo-link">
           <div className="logo-container">
-            <img src="/logo.png" alt="Livestock Simulators Logo" className="logo-image" />
+            <img src="/logo.png" alt="MetaCaprine Logo" className="logo-image" />
           </div>
           <h1 className="site-title">{t('appTitle')}</h1>
         </Link>
@@ -233,7 +233,7 @@ function Header({ user, onLogout, showSidebar, setShowSidebar, showFooter, setSh
           <div className="header-left">
             <Link to="/dashboard" className="logo-link">
               <div className="logo-container">
-                <img src="/logo.png" alt="Livestock Simulators Logo" className="logo-image" />
+                <img src="/logo.png" alt="MetaCaprine Logo" className="logo-image" />
               </div>
               <h1 className="site-title">{t('appTitle')}</h1>
             </Link>

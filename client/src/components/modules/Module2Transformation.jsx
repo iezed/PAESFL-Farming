@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import api from '../../utils/api';
 import { useI18n } from '../../i18n/I18nContext';
+import AlertModal from '../AlertModal';
 
 function Module2Transformation({ user }) {
   const { t } = useI18n();
@@ -40,12 +41,16 @@ function Module2Transformation({ user }) {
   const [scenarios, setScenarios] = useState([]);
   const [selectedScenario, setSelectedScenario] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [alertModal, setAlertModal] = useState({ isOpen: false, message: '', type: 'success' });
 
   useEffect(() => {
-    loadScenarios();
-    if (scenarioId) {
-      loadScenario(scenarioId);
-    }
+    const initialize = async () => {
+      await loadScenarios();
+      if (scenarioId) {
+        await loadScenario(scenarioId);
+      }
+    };
+    initialize();
   }, [scenarioId]);
 
   const loadScenarios = async () => {
@@ -156,10 +161,8 @@ function Module2Transformation({ user }) {
   };
 
   const handleInputFocus = (e) => {
-    // Select all text when focused if value is 0, so user can immediately type to replace it
-    if (parseFloat(e.target.value) === 0) {
-      e.target.select();
-    }
+    // Always select all text when focused for easy replacement
+    e.target.select();
   };
 
   const handleTransformationChange = (e) => {
@@ -235,7 +238,11 @@ function Module2Transformation({ user }) {
 
   const handleSave = async () => {
     if (!selectedScenario) {
-      alert(t('pleaseSelectScenario'));
+      setAlertModal({
+        isOpen: true,
+        message: t('pleaseSelectScenario'),
+        type: 'info'
+      });
       return;
     }
 
@@ -246,43 +253,73 @@ function Module2Transformation({ user }) {
       // Then save transformation data
       await api.post(`/modules/transformation/${selectedScenario.id}`, transformationData);
       await loadScenario(selectedScenario.id);
-      alert(t('dataSaved'));
+      // Trigger calculation after save
+      handleCalculate();
+      setAlertModal({
+        isOpen: true,
+        message: t('dataSavedAndCalculated') || 'Saved and calculated successfully',
+        type: 'success'
+      });
     } catch (error) {
-      alert(error.response?.data?.error || t('errorSaving'));
+      setAlertModal({
+        isOpen: true,
+        message: error.response?.data?.error || t('errorSaving'),
+        type: 'error'
+      });
     } finally {
       setLoading(false);
     }
   };
 
   const handleCalculate = () => {
-    const totalLiters = productionData.daily_production_liters * productionData.production_days * productionData.animals_count;
-    const totalProductKg = totalLiters / (transformationData.liters_per_kg_product || 1);
-    const processingCost = transformationData.processing_cost_per_liter * totalLiters;
-    const productRevenue = transformationData.product_price_per_kg * totalProductKg;
+    const totalLiters = (productionData.daily_production_liters || 0) * (productionData.production_days || 0) * (productionData.animals_count || 0);
+    const litersPerKg = transformationData.liters_per_kg_product || 1;
+    const totalProductKg = litersPerKg > 0 ? totalLiters / litersPerKg : 0;
+    const processingCost = (transformationData.processing_cost_per_liter || 0) * totalLiters;
+    
+    // Calculate weighted average price across channels
+    const directPrice = (transformationData.direct_sale_price_per_kg || 0);
+    const distPrice = (transformationData.distributors_price_per_kg || 0);
+    const thirdPrice = (transformationData.third_channel_price_per_kg || 0);
+    const directPct = (transformationData.sales_channel_direct_percentage || 0) / 100;
+    const distPct = (transformationData.sales_channel_distributors_percentage || 0) / 100;
+    const thirdPct = (transformationData.sales_channel_third_percentage || 0) / 100;
+    
+    const avgPrice = (directPrice * directPct) + (distPrice * distPct) + (thirdPrice * thirdPct);
+    const productRevenue = avgPrice * totalProductKg;
     
     // Compare with direct milk sale
-    const milkRevenue = productionData.milk_price_per_liter * totalLiters;
-    const costPerLiter = 0.5; // Simplified - should come from production costs
-    const milkCosts = costPerLiter * totalLiters;
-    const milkMargin = milkRevenue - milkCosts;
-    const transformationMargin = productRevenue - processingCost - milkCosts;
+    const milkRevenue = (productionData.milk_price_per_liter || 0) * totalLiters;
+    const milkCost = (productionData.milk_price_per_liter || 0) * totalLiters; // Cost of milk itself
+    const milkMargin = milkRevenue - milkCost;
+    const transformationMargin = productRevenue - processingCost - milkCost;
 
     setResults({
-      total_liters: totalLiters,
-      total_product_kg: totalProductKg,
-      product_revenue: productRevenue,
-      processing_cost: processingCost,
-      milk_revenue: milkRevenue,
-      milk_margin: milkMargin,
-      transformation_margin: transformationMargin,
+      total_liters: totalLiters || 0,
+      total_product_kg: totalProductKg || 0,
+      product_revenue: productRevenue || 0,
+      processing_cost: processingCost || 0,
+      milk_revenue: milkRevenue || 0,
+      milk_margin: milkMargin || 0,
+      transformation_margin: transformationMargin || 0,
       better_option: transformationMargin > milkMargin ? 'transformación' : 'venta_directa',
     });
   };
 
   const comparisonData = results ? [
-    { name: t('directSale'), Ingresos: results.milk_revenue, Costos: results.milk_revenue - results.milk_margin, Margen: results.milk_margin },
-    { name: t('transformation'), Ingresos: results.product_revenue, Costos: results.product_revenue - results.transformation_margin, Margen: results.transformation_margin },
-  ] : [];
+    { 
+      name: t('directSale'), 
+      Ingresos: Number(results.milk_revenue) || 0, 
+      Costos: Number(results.milk_revenue - results.milk_margin) || 0, 
+      Margen: Number(results.milk_margin) || 0 
+    },
+    { 
+      name: t('transformation'), 
+      Ingresos: Number(results.product_revenue) || 0, 
+      Costos: Number(results.product_revenue - results.transformation_margin) || 0, 
+      Margen: Number(results.transformation_margin) || 0 
+    },
+  ].filter(item => !isNaN(item.Ingresos) && !isNaN(item.Costos) && !isNaN(item.Margen)) : [];
 
   return (
     <div className="container">
@@ -372,9 +409,10 @@ function Module2Transformation({ user }) {
                   onChange={handleTransformationChange}
                 >
                   <option value="queso_fresco">{t('productTypes.queso_fresco')}</option>
+                  <option value="queso_crema">{t('productTypes.queso_crema')}</option>
+                  <option value="queso_semimadurado">{t('productTypes.queso_semimadurado')}</option>
                   <option value="queso_madurado">{t('productTypes.queso_madurado')}</option>
                   <option value="yogurt">{t('productTypes.yogurt')}</option>
-                  <option value="mantequilla">{t('productTypes.mantequilla')}</option>
                   <option value="otro">{t('productTypes.otro')}</option>
                 </select>
               </div>
@@ -414,6 +452,12 @@ function Module2Transformation({ user }) {
                   {t('productPrice')} (legacy - used as fallback if channel prices not set)
                 </small>
               </div>
+            </div>
+
+            <div style={{ marginTop: '20px', padding: '15px', background: '#f0f7ff', borderRadius: '8px', border: '1px solid #bde0ff' }}>
+              <p style={{ margin: 0, fontSize: '0.9em', color: '#0066cc' }}>
+                <strong>{t('note')}:</strong> {t('productMixNote')}
+              </p>
             </div>
 
             <h3 style={{ marginTop: '30px', marginBottom: '15px' }}>{t('salesChannels')}</h3>
@@ -528,8 +572,113 @@ function Module2Transformation({ user }) {
 
           {results && (
             <>
+              {/* Cost Breakdown Section */}
+              <div className="card">
+                <h2>{t('productionCostBreakdown')}</h2>
+                {(() => {
+                  const milkCostPerKg = (productionData.milk_price_per_liter || 0) * (transformationData.liters_per_kg_product || 0);
+                  const processingCostPerKg = (transformationData.processing_cost_per_liter || 0) * (transformationData.liters_per_kg_product || 0);
+                  const totalCostPerKg = milkCostPerKg + processingCostPerKg;
+                  
+                  return (
+                    <div style={{ marginBottom: '20px' }}>
+                      <table className="table">
+                        <tbody>
+                          <tr>
+                            <td><strong>{t('milkCostPerKg')}</strong></td>
+                            <td>${milkCostPerKg.toFixed(2)} ({(transformationData.liters_per_kg_product || 0).toFixed(2)} L × ${(productionData.milk_price_per_liter || 0).toFixed(2)}/L)</td>
+                          </tr>
+                          <tr>
+                            <td><strong>{t('processingCostPerKg')}</strong></td>
+                            <td>${processingCostPerKg.toFixed(2)} ({(transformationData.liters_per_kg_product || 0).toFixed(2)} L × ${(transformationData.processing_cost_per_liter || 0).toFixed(2)}/L)</td>
+                          </tr>
+                          <tr style={{ borderTop: '2px solid #333' }}>
+                            <td><strong>{t('totalCostPerKg')}</strong></td>
+                            <td><strong>${totalCostPerKg.toFixed(2)}</strong></td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  );
+                })()}
+              </div>
+
+              {/* Channel Margins Section */}
+              <div className="card">
+                <h2>{t('channelMargins')}</h2>
+                {(() => {
+                  const milkCostPerKg = (productionData.milk_price_per_liter || 0) * (transformationData.liters_per_kg_product || 0);
+                  const processingCostPerKg = (transformationData.processing_cost_per_liter || 0) * (transformationData.liters_per_kg_product || 0);
+                  const totalCostPerKg = milkCostPerKg + processingCostPerKg;
+                  
+                  const channels = [
+                    {
+                      name: t('salesChannelDirect'),
+                      percentage: transformationData.sales_channel_direct_percentage || 0,
+                      price: transformationData.direct_sale_price_per_kg || 0
+                    },
+                    {
+                      name: t('salesChannelDistributors'),
+                      percentage: transformationData.sales_channel_distributors_percentage || 0,
+                      price: transformationData.distributors_price_per_kg || 0
+                    },
+                    {
+                      name: t('salesChannelThird'),
+                      percentage: transformationData.sales_channel_third_percentage || 0,
+                      price: transformationData.third_channel_price_per_kg || 0
+                    }
+                  ];
+                  
+                  return (
+                    <table className="table">
+                      <thead>
+                        <tr>
+                          <th>{t('concept')}</th>
+                          <th>% {t('salesChannels')}</th>
+                          <th>{t('salesPrice')}</th>
+                          <th>{t('productionCost')}</th>
+                          <th>{t('marginPerKg')}</th>
+                          <th>{t('marginPercent')}</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {channels.map((channel, idx) => {
+                          const margin = channel.price - totalCostPerKg;
+                          const marginPercent = channel.price > 0 ? (margin / channel.price) * 100 : 0;
+                          return (
+                            <tr key={idx} style={{ opacity: channel.percentage === 0 ? 0.5 : 1 }}>
+                              <td><strong>{channel.name}</strong></td>
+                              <td>{channel.percentage.toFixed(1)}%</td>
+                              <td>${channel.price.toFixed(2)}</td>
+                              <td>${totalCostPerKg.toFixed(2)}</td>
+                              <td style={{ color: margin >= 0 ? 'green' : 'red', fontWeight: 'bold' }}>
+                                ${margin.toFixed(2)}
+                              </td>
+                              <td style={{ color: marginPercent >= 0 ? 'green' : 'red', fontWeight: 'bold' }}>
+                                {marginPercent.toFixed(1)}%
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  );
+                })()}
+              </div>
+
               <div className="card">
                 <h2>{t('comparison')}</h2>
+                <div style={{ marginBottom: '20px', padding: '15px', background: '#fff9e6', borderRadius: '8px', border: '1px solid #ffe066' }}>
+                  <p style={{ margin: '0 0 10px 0', fontSize: '0.95em', fontWeight: 'bold', color: '#996600' }}>
+                    📊 {t('note')}: ¿Qué estamos comparando?
+                  </p>
+                  <ul style={{ margin: 0, paddingLeft: '20px', fontSize: '0.9em', color: '#666' }}>
+                    <li><strong>Venta Directa:</strong> Vender la leche tal cual (sin transformar) al precio por litro definido</li>
+                    <li><strong>Transformación:</strong> Convertir la leche en producto lácteo (queso, yogurt, etc.) y venderlo</li>
+                    <li><strong>Supuestos:</strong> Se usa la misma cantidad de leche producida en ambos escenarios</li>
+                    <li><strong>Costos incluidos:</strong> Leche + procesamiento/transformación + empaque</li>
+                  </ul>
+                </div>
                 <table className="table">
                   <thead>
                     <tr>
@@ -563,8 +712,9 @@ function Module2Transformation({ user }) {
               <div className="card">
                 <h2>{t('visualization')}</h2>
                 <h3 style={{ marginBottom: '15px' }}>{t('optionsComparison')}</h3>
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={comparisonData}>
+                {comparisonData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height={300}>
+                    <BarChart data={comparisonData}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="name" />
                     <YAxis />
@@ -575,11 +725,23 @@ function Module2Transformation({ user }) {
                     <Bar dataKey="Margen" fill="#82ca9d" />
                   </BarChart>
                 </ResponsiveContainer>
+                ) : (
+                  <div style={{ padding: '40px', textAlign: 'center', background: '#f5f5f5', borderRadius: '8px' }}>
+                    <p style={{ color: '#666', margin: 0 }}>No hay datos para mostrar. Complete los campos y presione "Calcular".</p>
+                  </div>
+                )}
               </div>
             </>
           )}
         </>
       )}
+      <AlertModal
+        isOpen={alertModal.isOpen}
+        onClose={() => setAlertModal({ ...alertModal, isOpen: false })}
+        title={alertModal.type === 'success' ? t('success') || 'Success' : alertModal.type === 'error' ? t('error') || 'Error' : t('information') || 'Information'}
+        message={alertModal.message}
+        type={alertModal.type}
+      />
     </div>
   );
 }

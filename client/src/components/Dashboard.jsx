@@ -338,8 +338,23 @@ function Dashboard({ user, onLogout }) {
               </div>
               <div className="scenario-meta">
                 <span className="meta-item">
-                  <span className="meta-label">Created:</span>
+                  <span className="meta-label">📅 Creado:</span>
                   <span className="meta-value">{new Date(scenario.created_at).toLocaleDateString()}</span>
+                </span>
+                {scenario.updated_at && scenario.updated_at !== scenario.created_at && (
+                  <span className="meta-item">
+                    <span className="meta-label">🔄 Actualizado:</span>
+                    <span className="meta-value">{new Date(scenario.updated_at).toLocaleDateString()}</span>
+                  </span>
+                )}
+                <span className="meta-item">
+                  <span className="meta-label">📝 Estado:</span>
+                  <span className="meta-value" style={{ 
+                    color: scenario.updated_at && scenario.updated_at !== scenario.created_at ? '#059669' : '#6b7280',
+                    fontWeight: '500'
+                  }}>
+                    {scenario.updated_at && scenario.updated_at !== scenario.created_at ? 'Editable (con datos)' : 'Nuevo'}
+                  </span>
                 </span>
               </div>
             </div>
