@@ -238,29 +238,29 @@ function Module3Lactation({ user }) {
   };
 
   const cycleData = results ? [
-    { name: 'Días Lactancia', value: Number(lactationData.lactation_days) || 0 },
-    { name: 'Días Secos', value: Number(lactationData.dry_days) || 0 },
+    { name: t('lactationDays'), value: Number(lactationData.lactation_days) || 0 },
+    { name: t('dryDays'), value: Number(lactationData.dry_days) || 0 },
   ].filter(item => !isNaN(item.value)) : [];
 
   const productionImpact = results ? [
     { 
-      name: 'Producción Base', 
+      name: t('baseProduction'), 
       value: Number(productionData.daily_production_liters || 0) * Number(productionData.animals_count || 0) * Number(productionData.production_days || 0) 
     },
-    { name: 'Producción Ajustada', value: Number(results.totalProductionLiters) || 0 },
+    { name: t('adjustedProduction'), value: Number(results.totalProductionLiters) || 0 },
   ].filter(item => !isNaN(item.value)) : [];
 
   return (
     <div className="container">
       <header style={{ marginBottom: '20px' }}>
         <button className="btn btn-secondary" onClick={() => navigate('/dashboard')}>
-          ← Volver al Dashboard
+          {t('backToDashboard')}
         </button>
-        <h1 style={{ marginTop: '20px' }}>Módulo 3: Lactancia y Vida Productiva</h1>
+        <h1 style={{ marginTop: '20px' }}>{t('module3Title')}</h1>
       </header>
 
       <div className="card">
-        <h2>Seleccionar Escenario</h2>
+        <h2>{t('selectScenario')}</h2>
         <select
           value={selectedScenario?.id || ''}
           onChange={(e) => {
@@ -272,7 +272,7 @@ function Module3Lactation({ user }) {
           }}
           style={{ marginBottom: '20px' }}
         >
-          <option value="">-- Selecciona un escenario --</option>
+          <option value="">{t('selectScenarioPlaceholder')}</option>
           {scenarios.map(s => (
             <option key={s.id} value={s.id}>{s.name}</option>
           ))}
@@ -282,10 +282,10 @@ function Module3Lactation({ user }) {
       {selectedScenario && (
         <>
           <div className="card">
-            <h2>Datos de Producción Base</h2>
+            <h2>{t('baseProductionData')}</h2>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '15px' }}>
               <div className="form-group">
-                <label>Producción Diaria (litros)</label>
+                <label>{t('dailyProduction')}</label>
                 <input
                   type="number"
                   name="daily_production_liters"
@@ -296,7 +296,7 @@ function Module3Lactation({ user }) {
                 />
               </div>
               <div className="form-group">
-                <label>Días de Producción</label>
+                <label>{t('productionDays')}</label>
                 <input
                   type="number"
                   name="production_days"
@@ -306,7 +306,7 @@ function Module3Lactation({ user }) {
                 />
               </div>
               <div className="form-group">
-                <label>Número de Animales</label>
+                <label>{t('animalsCount')}</label>
                 <input
                   type="number"
                   name="animals_count"
@@ -316,7 +316,7 @@ function Module3Lactation({ user }) {
                 />
               </div>
               <div className="form-group">
-                <label>Precio Leche (por litro)</label>
+                <label>{t('milkPrice')}</label>
                 <input
                   type="number"
                   name="milk_price_per_liter"
@@ -328,10 +328,10 @@ function Module3Lactation({ user }) {
               </div>
             </div>
 
-            <h3 style={{ marginTop: '30px', marginBottom: '15px' }}>Datos de Lactancia</h3>
+            <h3 style={{ marginTop: '30px', marginBottom: '15px' }}>{t('lactationData')}</h3>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '15px' }}>
               <div className="form-group">
-                <label>Días de Lactancia</label>
+                <label>{t('lactationDays')}</label>
                 <input
                   type="number"
                   name="lactation_days"
@@ -341,7 +341,7 @@ function Module3Lactation({ user }) {
                 />
               </div>
               <div className="form-group">
-                <label>Días Secos</label>
+                <label>{t('dryDays')}</label>
                 <input
                   type="number"
                   name="dry_days"
@@ -351,7 +351,7 @@ function Module3Lactation({ user }) {
                 />
               </div>
               <div className="form-group">
-                <label>Vida Productiva (años)</label>
+                <label>{t('productiveLifeYears')}</label>
                 <input
                   type="number"
                   name="productive_life_years"
@@ -362,7 +362,7 @@ function Module3Lactation({ user }) {
                 />
               </div>
               <div className="form-group">
-                <label>Tasa de Reemplazo (%)</label>
+                <label>{t('replacementRate')}</label>
                 <input
                   type="number"
                   name="replacement_rate"
@@ -376,10 +376,10 @@ function Module3Lactation({ user }) {
 
             <div style={{ marginTop: '20px' }}>
               <button className="btn btn-primary" onClick={handleCalculate} style={{ marginRight: '10px' }}>
-                Calcular
+                {t('calculate')}
               </button>
               <button className="btn btn-secondary" onClick={handleSave} disabled={loading}>
-                {loading ? 'Guardando...' : 'Guardar y Calcular'}
+                {loading ? t('saving') : t('saveAndCalculate')}
               </button>
             </div>
           </div>
@@ -387,47 +387,47 @@ function Module3Lactation({ user }) {
           {results && (
             <>
               <div className="card">
-                <h2>Resultados</h2>
+                <h2>{t('results')}</h2>
                 <table className="table">
                   <tbody>
                     <tr>
-                      <td><strong>Días del Ciclo</strong></td>
-                      <td>{Number(results.cycleDays || 0).toFixed(0)} días</td>
+                      <td><strong>{t('cycleDays')}</strong></td>
+                      <td>{Number(results.cycleDays || 0).toFixed(0)} {t('days')}</td>
                     </tr>
                     <tr>
-                      <td><strong>Ciclos por Año</strong></td>
+                      <td><strong>{t('cyclesPerYear')}</strong></td>
                       <td>{Number(results.cyclesPerYear || 0).toFixed(2)}</td>
                     </tr>
                     <tr>
-                      <td><strong>Días Productivos Totales</strong></td>
-                      <td>{Number(results.productiveDays || 0).toFixed(0)} días</td>
+                      <td><strong>{t('totalProductiveDays')}</strong></td>
+                      <td>{Number(results.productiveDays || 0).toFixed(0)} {t('days')}</td>
                     </tr>
                     <tr>
-                      <td><strong>Días Efectivos de Producción</strong></td>
-                      <td>{Number(results.effectiveProductionDays || 0).toFixed(0)} días</td>
+                      <td><strong>{t('effectiveProductionDays')}</strong></td>
+                      <td>{Number(results.effectiveProductionDays || 0).toFixed(0)} {t('days')}</td>
                     </tr>
                     <tr>
-                      <td><strong>Producción Total Ajustada (litros)</strong></td>
-                      <td>{Number(results.totalProductionLiters || 0).toLocaleString('es-ES', { maximumFractionDigits: 2 })}</td>
+                      <td><strong>{t('totalAdjustedProduction')}</strong></td>
+                      <td>{Number(results.totalProductionLiters || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
                     </tr>
                     <tr>
-                      <td><strong>Ingresos Totales</strong></td>
-                      <td>${Number(results.totalRevenue || 0).toLocaleString('es-ES', { maximumFractionDigits: 2 })}</td>
+                      <td><strong>{t('totalRevenue')}</strong></td>
+                      <td>${Number(results.totalRevenue || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
                     </tr>
                     <tr>
-                      <td><strong>Costos Totales</strong></td>
-                      <td>${Number(results.totalCosts || 0).toLocaleString('es-ES', { maximumFractionDigits: 2 })}</td>
+                      <td><strong>{t('totalCosts')}</strong></td>
+                      <td>${Number(results.totalCosts || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
                     </tr>
                     <tr>
-                      <td><strong>Margen Bruto</strong></td>
-                      <td>${Number(results.grossMargin || 0).toLocaleString('es-ES', { maximumFractionDigits: 2 })}</td>
+                      <td><strong>{t('grossMargin')}</strong></td>
+                      <td>${Number(results.grossMargin || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
                     </tr>
                     <tr>
-                      <td><strong>Margen (%)</strong></td>
+                      <td><strong>{t('marginPercentage')}</strong></td>
                       <td>{Number(results.marginPercentage || 0).toFixed(2)}%</td>
                     </tr>
                     <tr>
-                      <td><strong>Tasa de Reemplazo</strong></td>
+                      <td><strong>{t('replacementRate')}</strong></td>
                       <td>{Number(results.replacementRate || 0).toFixed(2)}%</td>
                     </tr>
                   </tbody>
@@ -435,8 +435,8 @@ function Module3Lactation({ user }) {
               </div>
 
               <div className="card">
-                <h2>Visualización</h2>
-                <h3 style={{ marginBottom: '15px' }}>Ciclo de Lactancia</h3>
+                <h2>{t('visualization')}</h2>
+                <h3 style={{ marginBottom: '15px' }}>{t('lactationCycleChart')}</h3>
                 <ResponsiveContainer width="100%" height={300}>
                   <BarChart data={cycleData}>
                     <CartesianGrid strokeDasharray="3 3" />
@@ -448,7 +448,7 @@ function Module3Lactation({ user }) {
                   </BarChart>
                 </ResponsiveContainer>
 
-                <h3 style={{ marginTop: '30px', marginBottom: '15px' }}>Impacto en Producción</h3>
+                <h3 style={{ marginTop: '30px', marginBottom: '15px' }}>{t('productionImpact')}</h3>
                 <ResponsiveContainer width="100%" height={300}>
                   <BarChart data={productionImpact}>
                     <CartesianGrid strokeDasharray="3 3" />
