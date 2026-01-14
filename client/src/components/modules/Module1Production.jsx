@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import api from '../../utils/api';
 import { useI18n } from '../../i18n/I18nContext';
+import AlertModal from '../AlertModal';
 
 function Module1Production({ user }) {
   const { t } = useI18n();
@@ -26,6 +27,7 @@ function Module1Production({ user }) {
   const [scenarios, setScenarios] = useState([]);
   const [selectedScenario, setSelectedScenario] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [alertModal, setAlertModal] = useState({ isOpen: false, message: '', type: 'success' });
 
   useEffect(() => {
     loadScenarios();
@@ -136,7 +138,11 @@ function Module1Production({ user }) {
 
   const handleSave = async () => {
     if (!selectedScenario) {
-      alert(t('pleaseSelectScenario'));
+      setAlertModal({
+        isOpen: true,
+        message: t('pleaseSelectScenario'),
+        type: 'info'
+      });
       return;
     }
 
@@ -144,9 +150,19 @@ function Module1Production({ user }) {
     try {
       await api.post(`/modules/production/${selectedScenario.id}`, formData);
       await loadScenario(selectedScenario.id);
-      alert(t('dataSaved'));
+      // Trigger calculation after save
+      handleCalculate();
+      setAlertModal({
+        isOpen: true,
+        message: t('dataSavedAndCalculated') || 'Data saved and results calculated',
+        type: 'success'
+      });
     } catch (error) {
-      alert(error.response?.data?.error || t('errorSaving'));
+      setAlertModal({
+        isOpen: true,
+        message: error.response?.data?.error || t('errorSaving'),
+        type: 'error'
+      });
     } finally {
       setLoading(false);
     }
@@ -405,6 +421,13 @@ function Module1Production({ user }) {
           )}
         </>
       )}
+      <AlertModal
+        isOpen={alertModal.isOpen}
+        onClose={() => setAlertModal({ ...alertModal, isOpen: false })}
+        title={alertModal.type === 'success' ? t('success') || 'Success' : alertModal.type === 'error' ? t('error') || 'Error' : t('information') || 'Information'}
+        message={alertModal.message}
+        type={alertModal.type}
+      />
     </div>
   );
 }
