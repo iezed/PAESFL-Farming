@@ -149,7 +149,9 @@ export const translations = {
     
     // Module 2 - Transformation
     module2Title: 'Module 2: Dairy Transformation',
-    baseProductionData: 'Base Production Data',
+    baseProductionData: 'Base Production Data (Inherited from Module 1)',
+    inheritedFromModule1: 'Inherited from Module 1 - Read Only',
+    module1DataRequired: 'This scenario does not have production data (Module 1). Please complete Module 1 first before using Transformation.',
     milkPriceForComparison: 'Milk Price (per liter) - for comparison',
     transformationData: 'Transformation Data',
     productType: 'Product Type',
@@ -374,7 +376,9 @@ export const translations = {
     
     // Module 2 - Transformation
     module2Title: 'Módulo 2: Transformación Láctea',
-    baseProductionData: 'Datos de Producción Base',
+    baseProductionData: 'Datos de Producción Base (Heredados del Módulo 1)',
+    inheritedFromModule1: 'Heredado del Módulo 1 - Solo Lectura',
+    module1DataRequired: 'Este escenario no tiene datos de producción (Módulo 1). Por favor, complete primero el Módulo 1 antes de usar la Transformación.',
     milkPriceForComparison: 'Precio Leche (por litro) - para comparación',
     transformationData: 'Datos de Transformación',
     productType: 'Tipo de Producto',

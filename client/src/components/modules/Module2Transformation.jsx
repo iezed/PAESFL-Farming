@@ -71,9 +71,9 @@ function Module2Transformation({ user }) {
       const response = await api.get(`/scenarios/${id}`);
       const scenario = response.data;
       setSelectedScenario(scenario);
+      
+      // ALWAYS load production data from Module 1 (read-only inheritance)
       if (scenario.productionData) {
-        // Normalize all numeric values to ensure no leading zeros
-        // Ensure all production data fields are loaded (for proper data propagation)
         const normalizedData = {
           daily_production_liters: 0,
           production_days: 0,
@@ -97,9 +97,16 @@ function Module2Transformation({ user }) {
           }
         });
         setProductionData(normalizedData);
+      } else {
+        // If no production data exists, show warning
+        setAlertModal({
+          isOpen: true,
+          message: 'Este escenario no tiene datos de producción (Módulo 1). Por favor, complete primero el Módulo 1 antes de usar la Transformación.',
+          type: 'info'
+        });
       }
+      
       if (scenario.transformationData) {
-        // Ensure all transformation data fields are set with defaults
         setTransformationData({
           product_type: 'queso_fresco',
           liters_per_kg_product: 0,
@@ -122,43 +129,8 @@ function Module2Transformation({ user }) {
     }
   };
 
-  const handleProductionChange = (e) => {
-    const { name, value } = e.target;
-    
-    // Handle empty string
-    if (value === '' || value === null || value === undefined) {
-      setProductionData(prev => ({
-        ...prev,
-        [name]: 0,
-      }));
-      return;
-    }
-    
-    // Get the raw input value as string
-    let stringValue = value.toString();
-    
-    // Remove leading zeros that appear before non-zero digits
-    // Pattern: one or more zeros at the start, followed by a digit 1-9 (not 0, not decimal point)
-    // This will convert "01234" -> "1234", "056" -> "56", "012" -> "12"
-    // But will preserve "0", "0.5", "0.123" (since they have decimal point after the zero)
-    if (stringValue.length > 1 && stringValue[0] === '0' && stringValue[1] !== '.' && stringValue[1] !== ',') {
-      // Remove all leading zeros
-      stringValue = stringValue.replace(/^0+/, '');
-      // If we removed everything, set back to '0'
-      if (stringValue === '') {
-        stringValue = '0';
-      }
-    }
-    
-    // Parse the cleaned value to a number
-    const numValue = parseFloat(stringValue);
-    
-    // Update state with the numeric value
-    setProductionData(prev => ({
-      ...prev,
-      [name]: isNaN(numValue) ? 0 : numValue,
-    }));
-  };
+  // Production data is now read-only and inherited from Module 1
+  // No need for handleProductionChange anymore
 
   const handleInputFocus = (e) => {
     // Always select all text when focused for easy replacement
@@ -248,9 +220,7 @@ function Module2Transformation({ user }) {
 
     setLoading(true);
     try {
-      // Save production data first
-      await api.post(`/modules/production/${selectedScenario.id}`, productionData);
-      // Then save transformation data
+      // Only save transformation data (production data is inherited from Module 1)
       await api.post(`/modules/transformation/${selectedScenario.id}`, transformationData);
       await loadScenario(selectedScenario.id);
       // Trigger calculation after save
@@ -354,48 +324,69 @@ function Module2Transformation({ user }) {
         <>
           <div className="card">
             <h2>{t('baseProductionData')}</h2>
+            <div style={{ marginBottom: '20px', padding: '15px', background: '#e8f5e9', borderRadius: '8px', border: '1px solid #4caf50' }}>
+              <p style={{ margin: 0, fontSize: '0.9em', color: '#2e7d32', fontWeight: '500' }}>
+                📊 <strong>{t('note')}:</strong> Estos datos se heredan automáticamente del escenario de "Producción y Venta de Leche" (Módulo 1). No son editables aquí para mantener coherencia.
+              </p>
+            </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '15px' }}>
               <div className="form-group">
-                <label>{t('dailyProduction')}</label>
+                <label>{t('dailyProduction')} 🔒</label>
                 <input
                   type="number"
                   name="daily_production_liters"
                   value={productionData.daily_production_liters}
-                  onChange={handleProductionChange}
-                  onFocus={handleInputFocus}
+                  readOnly
+                  disabled
+                  style={{ background: '#f5f5f5', cursor: 'not-allowed', color: '#666' }}
                   step="0.01"
                 />
+                <small style={{ color: '#666', fontSize: '0.85em', display: 'block', marginTop: '5px' }}>
+                  Heredado del Módulo 1
+                </small>
               </div>
               <div className="form-group">
-                <label>{t('productionDays')}</label>
+                <label>{t('productionDays')} 🔒</label>
                 <input
                   type="number"
                   name="production_days"
                   value={productionData.production_days}
-                  onChange={handleProductionChange}
-                  onFocus={handleInputFocus}
+                  readOnly
+                  disabled
+                  style={{ background: '#f5f5f5', cursor: 'not-allowed', color: '#666' }}
                 />
+                <small style={{ color: '#666', fontSize: '0.85em', display: 'block', marginTop: '5px' }}>
+                  Heredado del Módulo 1
+                </small>
               </div>
               <div className="form-group">
-                <label>{t('animalsCount')}</label>
+                <label>{t('animalsCount')} 🔒</label>
                 <input
                   type="number"
                   name="animals_count"
                   value={productionData.animals_count}
-                  onChange={handleProductionChange}
-                  onFocus={handleInputFocus}
+                  readOnly
+                  disabled
+                  style={{ background: '#f5f5f5', cursor: 'not-allowed', color: '#666' }}
                 />
+                <small style={{ color: '#666', fontSize: '0.85em', display: 'block', marginTop: '5px' }}>
+                  Heredado del Módulo 1
+                </small>
               </div>
               <div className="form-group">
-                <label>{t('milkPriceForComparison')}</label>
+                <label>Precio de Referencia de la Leche (por litro) 🔒</label>
                 <input
                   type="number"
                   name="milk_price_per_liter"
                   value={productionData.milk_price_per_liter}
-                  onChange={handleProductionChange}
-                  onFocus={handleInputFocus}
+                  readOnly
+                  disabled
+                  style={{ background: '#f5f5f5', cursor: 'not-allowed', color: '#666' }}
                   step="0.01"
                 />
+                <small style={{ color: '#666', fontSize: '0.85em', display: 'block', marginTop: '5px' }}>
+                  Heredado del Módulo 1 - Solo lectura
+                </small>
               </div>
             </div>
 
