@@ -161,7 +161,12 @@ function AppContent() {
 function App() {
   return (
     <I18nProvider>
-      <Router>
+      <Router
+        future={{
+          v7_startTransition: true,
+          v7_relativeSplatPath: true,
+        }}
+      >
         <AppContent />
       </Router>
     </I18nProvider>

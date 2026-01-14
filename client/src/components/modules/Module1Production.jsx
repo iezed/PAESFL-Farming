@@ -69,7 +69,20 @@ function Module1Production({ user }) {
         setFormData(normalizedData);
       }
       if (scenario.results) {
-        setResults(scenario.results);
+        // Normalize all numeric values in results to ensure they are numbers
+        const normalizedResults = {};
+        Object.keys(scenario.results).forEach(key => {
+          const value = scenario.results[key];
+          if (typeof value === 'number') {
+            normalizedResults[key] = value;
+          } else if (typeof value === 'string') {
+            const numValue = parseFloat(value);
+            normalizedResults[key] = isNaN(numValue) ? 0 : numValue;
+          } else {
+            normalizedResults[key] = value;
+          }
+        });
+        setResults(normalizedResults);
       }
     } catch (error) {
       console.error('Error loading scenario:', error);
@@ -348,15 +361,15 @@ function Module1Production({ user }) {
                     </tr>
                     <tr>
                       <td><strong>{t('marginPercentage')}</strong></td>
-                      <td>{results.margin_percentage?.toFixed(2)}%</td>
+                      <td>{typeof results.margin_percentage === 'number' ? results.margin_percentage.toFixed(2) : '0.00'}%</td>
                     </tr>
                     <tr>
                       <td><strong>{t('revenuePerLiter')}</strong></td>
-                      <td>${results.revenue_per_liter?.toFixed(2)}</td>
+                      <td>${typeof results.revenue_per_liter === 'number' ? results.revenue_per_liter.toFixed(2) : '0.00'}</td>
                     </tr>
                     <tr>
                       <td><strong>{t('costPerLiter')}</strong></td>
-                      <td>${results.cost_per_liter?.toFixed(2)}</td>
+                      <td>${typeof results.cost_per_liter === 'number' ? results.cost_per_liter.toFixed(2) : '0.00'}</td>
                     </tr>
                   </tbody>
                 </table>
