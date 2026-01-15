@@ -91,8 +91,99 @@ export function calculateRevenue(productionData) {
 }
 
 /**
+ * Calculate transformation metrics for Product Mix (multiple products)
+ * Supports multiple products with distribution percentages and 3 sales channels per product
+ */
+export function calculateTransformationMetricsProductMix(productionData, transformationProducts) {
+  if (!productionData || !transformationProducts || transformationProducts.length === 0) return null;
+
+  const productionMetrics = calculateProductionMetrics(productionData);
+  const totalLiters = productionMetrics.totalProductionLiters;
+  
+  // Calculate total milk production cost per liter (sum of all costs from Module 1)
+  const feedCost = Number(productionData.feed_cost_per_liter) || 0;
+  const laborCost = Number(productionData.labor_cost_per_liter) || 0;
+  const healthCost = Number(productionData.health_cost_per_liter) || 0;
+  const infrastructureCost = Number(productionData.infrastructure_cost_per_liter) || 0;
+  const otherCost = Number(productionData.other_costs_per_liter) || 0;
+  const totalMilkProductionCostPerLiter = feedCost + laborCost + healthCost + infrastructureCost + otherCost;
+
+  let totalProductRevenue = 0;
+  let totalProcessingCost = 0;
+  let totalPackagingCost = 0;
+  const productsBreakdown = [];
+
+  // Process each product
+  for (const product of transformationProducts) {
+    const distributionPct = Number(product.distribution_percentage) || 0;
+    const litersPerKg = Number(product.liters_per_kg_product) || 1;
+    const processingCostPerLiter = Number(product.processing_cost_per_liter) || 0;
+    const packagingCostPerKg = Number(product.packaging_cost_per_kg) || 0;
+
+    // Calculate liters allocated to this product
+    const productLiters = totalLiters * (distributionPct / 100);
+    const productKg = productLiters / litersPerKg;
+
+    // Calculate costs for this product
+    const productProcessingCost = processingCostPerLiter * productLiters;
+    const productPackagingCost = packagingCostPerKg * productKg;
+    const productMilkCost = totalMilkProductionCostPerLiter * productLiters;
+
+    // Calculate revenue by sales channel for this product
+    const directPct = Number(product.sales_channel_direct_percentage) || 100;
+    const distPct = Number(product.sales_channel_distributors_percentage) || 0;
+    const thirdPct = Number(product.sales_channel_third_percentage) || 0;
+
+    const directPrice = Number(product.direct_sale_price_per_kg) || 0;
+    const distPrice = Number(product.distributors_price_per_kg) || 0;
+    const thirdPrice = Number(product.third_channel_price_per_kg) || 0;
+
+    const directKg = productKg * (directPct / 100);
+    const distKg = productKg * (distPct / 100);
+    const thirdKg = productKg * (thirdPct / 100);
+
+    const directRevenue = directPrice * directKg;
+    const distRevenue = distPrice * distKg;
+    const thirdRevenue = thirdPrice * thirdKg;
+    const productRevenue = directRevenue + distRevenue + thirdRevenue;
+
+    totalProductRevenue += productRevenue;
+    totalProcessingCost += productProcessingCost;
+    totalPackagingCost += productPackagingCost;
+
+    productsBreakdown.push({
+      product_type: product.product_type,
+      product_type_custom: product.product_type_custom,
+      distribution_percentage: distributionPct,
+      productKg,
+      productRevenue,
+      processingCost: productProcessingCost,
+      packagingCost: productPackagingCost,
+      milkCost: productMilkCost,
+      salesChannels: {
+        direct: { percentage: directPct, kg: directKg, pricePerKg: directPrice, revenue: directRevenue },
+        distributors: { percentage: distPct, kg: distKg, pricePerKg: distPrice, revenue: distRevenue },
+        third: { percentage: thirdPct, kg: thirdKg, pricePerKg: thirdPrice, revenue: thirdRevenue },
+      },
+    });
+  }
+
+  const totalProductKg = productsBreakdown.reduce((sum, p) => sum + p.productKg, 0);
+
+  return {
+    totalProductKg,
+    processingCost: totalProcessingCost,
+    packagingCost: totalPackagingCost,
+    productRevenue: totalProductRevenue,
+    revenuePerKg: totalProductKg > 0 ? totalProductRevenue / totalProductKg : 0,
+    productsBreakdown,
+  };
+}
+
+/**
  * Calculate transformation metrics (for dairy transformation module)
  * Supports 3 sales channels: direct, distributors, third/mixed
+ * Legacy function for single product scenarios
  */
 export function calculateTransformationMetrics(productionData, transformationData) {
   if (!productionData || !transformationData) return null;
@@ -239,12 +330,24 @@ export function runSimulation(scenarioData) {
   let lactationMetrics = null;
   let yieldMetrics = null;
 
-  if (transformationData) {
-    transformationMetrics = calculateTransformationMetrics(productionData, transformationData);
+  // Handle transformation: support both legacy single product and new Product Mix
+  const { transformationProducts = [] } = scenarioData;
+  if (transformationData || (transformationProducts && transformationProducts.length > 0)) {
+    if (transformationProducts && transformationProducts.length > 0) {
+      // New Product Mix: calculate for multiple products
+      transformationMetrics = calculateTransformationMetricsProductMix(productionData, transformationProducts);
+    } else {
+      // Legacy single product
+      transformationMetrics = calculateTransformationMetrics(productionData, transformationData);
+    }
+    
     // For transformation scenarios, use product revenue instead of milk revenue
-    if (scenarioType === 'transformation') {
+    if (scenarioType === 'transformation' && transformationMetrics) {
       totalRevenue = transformationMetrics.productRevenue;
       totalCosts += transformationMetrics.processingCost;
+      if (transformationMetrics.packagingCost) {
+        totalCosts += transformationMetrics.packagingCost;
+      }
     }
   }
 

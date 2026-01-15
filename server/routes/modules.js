@@ -39,6 +39,27 @@ router.post('/production/:scenarioId', async (req, res) => {
       milk_price_per_liter,
     } = req.body;
 
+    // Validate and sanitize numeric values to prevent overflow
+    // DECIMAL(10,2) range: -99999999.99 to 99999999.99
+    // INTEGER range: -2147483648 to 2147483647
+    const MAX_DECIMAL = 99999999.99;
+    const MIN_DECIMAL = -99999999.99;
+    const MAX_INTEGER = 2147483647;
+    
+    const sanitizeDecimal = (value) => {
+      if (value === null || value === undefined) return null;
+      const num = parseFloat(value);
+      if (isNaN(num) || !isFinite(num)) return null;
+      return Math.max(MIN_DECIMAL, Math.min(MAX_DECIMAL, num));
+    };
+    
+    const sanitizeInteger = (value) => {
+      if (value === null || value === undefined) return null;
+      const num = parseInt(value);
+      if (isNaN(num) || !isFinite(num)) return null;
+      return Math.max(0, Math.min(MAX_INTEGER, Math.round(num)));
+    };
+
     // Upsert production data
     const result = await pool.query(
       `INSERT INTO production_data (
@@ -60,15 +81,15 @@ router.post('/production/:scenarioId', async (req, res) => {
       RETURNING *`,
       [
         scenarioId,
-        daily_production_liters,
-        production_days,
-        animals_count,
-        feed_cost_per_liter,
-        labor_cost_per_liter,
-        health_cost_per_liter,
-        infrastructure_cost_per_liter,
-        other_costs_per_liter,
-        milk_price_per_liter,
+        sanitizeDecimal(daily_production_liters),
+        sanitizeInteger(production_days),
+        sanitizeInteger(animals_count),
+        sanitizeDecimal(feed_cost_per_liter),
+        sanitizeDecimal(labor_cost_per_liter),
+        sanitizeDecimal(health_cost_per_liter),
+        sanitizeDecimal(infrastructure_cost_per_liter),
+        sanitizeDecimal(other_costs_per_liter),
+        sanitizeDecimal(milk_price_per_liter),
       ]
     );
 
@@ -77,11 +98,20 @@ router.post('/production/:scenarioId', async (req, res) => {
 
     res.json(result.rows[0]);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error('Error saving production data:', error);
+    // Provide more user-friendly error messages
+    if (error.message && error.message.includes('overflow')) {
+      res.status(400).json({ error: 'One or more values are too large. Maximum value allowed is 99,999,999.99' });
+    } else if (error.message && error.message.includes('numeric')) {
+      res.status(400).json({ error: 'Invalid numeric value. Please check all input fields.' });
+    } else {
+      res.status(500).json({ error: error.message || 'Error saving data' });
+    }
   }
 });
 
 // Module 2: Transformation - Save/Update transformation data
+// Supports both legacy single product and new Product Mix (multiple products)
 router.post('/transformation/:scenarioId', async (req, res) => {
   try {
     const pool = getPool();
@@ -91,50 +121,121 @@ router.post('/transformation/:scenarioId', async (req, res) => {
       return res.status(403).json({ error: 'Access denied: Scenario not found or you do not have permission' });
     }
 
-    const {
-      product_type,
-      liters_per_kg_product,
-      processing_cost_per_liter,
-      product_price_per_kg, // Legacy field
-      sales_channel_direct_percentage,
-      sales_channel_distributors_percentage,
-      sales_channel_third_percentage,
-      direct_sale_price_per_kg,
-      distributors_price_per_kg,
-      third_channel_price_per_kg,
-    } = req.body;
+    // Check if we're receiving products array (Product Mix) or single product (legacy)
+    if (req.body.products && Array.isArray(req.body.products)) {
+      // New Product Mix format - save multiple products
+      const { products } = req.body;
+      
+      // Validate that distribution percentages sum to 100
+      const totalPercentage = products.reduce((sum, p) => sum + (parseFloat(p.distribution_percentage) || 0), 0);
+      if (Math.abs(totalPercentage - 100) > 0.01) {
+        return res.status(400).json({ error: `Distribution percentages must sum to 100%. Current sum: ${totalPercentage.toFixed(2)}%` });
+      }
 
-    const result = await pool.query(
-      `INSERT INTO transformation_data (
-        scenario_id, product_type, liters_per_kg_product,
-        processing_cost_per_liter, product_price_per_kg,
-        sales_channel_direct_percentage, sales_channel_distributors_percentage, sales_channel_third_percentage,
-        direct_sale_price_per_kg, distributors_price_per_kg, third_channel_price_per_kg
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-      ON CONFLICT (scenario_id) DO UPDATE SET
-        product_type = EXCLUDED.product_type,
-        liters_per_kg_product = EXCLUDED.liters_per_kg_product,
-        processing_cost_per_liter = EXCLUDED.processing_cost_per_liter,
-        product_price_per_kg = EXCLUDED.product_price_per_kg,
-        sales_channel_direct_percentage = EXCLUDED.sales_channel_direct_percentage,
-        sales_channel_distributors_percentage = EXCLUDED.sales_channel_distributors_percentage,
-        sales_channel_third_percentage = EXCLUDED.sales_channel_third_percentage,
-        direct_sale_price_per_kg = EXCLUDED.direct_sale_price_per_kg,
-        distributors_price_per_kg = EXCLUDED.distributors_price_per_kg,
-        third_channel_price_per_kg = EXCLUDED.third_channel_price_per_kg,
-        updated_at = CURRENT_TIMESTAMP
-      RETURNING *`,
-      [
-        scenarioId, product_type, liters_per_kg_product, processing_cost_per_liter, product_price_per_kg,
-        sales_channel_direct_percentage || 100, sales_channel_distributors_percentage || 0, sales_channel_third_percentage || 0,
-        direct_sale_price_per_kg, distributors_price_per_kg, third_channel_price_per_kg
-      ]
-    );
+      // Delete existing products for this scenario
+      await pool.query('DELETE FROM transformation_products WHERE scenario_id = $1', [scenarioId]);
 
-    // Recalculate and save results
-    await calculateAndSaveResults(pool, scenarioId);
+      // Insert new products
+      const savedProducts = [];
+      for (const product of products) {
+        const {
+          product_type,
+          product_type_custom,
+          distribution_percentage,
+          liters_per_kg_product,
+          processing_cost_per_liter,
+          packaging_cost_per_kg,
+          sales_channel_direct_percentage,
+          sales_channel_distributors_percentage,
+          sales_channel_third_percentage,
+          direct_sale_price_per_kg,
+          distributors_price_per_kg,
+          third_channel_price_per_kg,
+        } = product;
 
-    res.json(result.rows[0]);
+        const result = await pool.query(
+          `INSERT INTO transformation_products (
+            scenario_id, product_type, product_type_custom, distribution_percentage,
+            liters_per_kg_product, processing_cost_per_liter, packaging_cost_per_kg,
+            sales_channel_direct_percentage, sales_channel_distributors_percentage, sales_channel_third_percentage,
+            direct_sale_price_per_kg, distributors_price_per_kg, third_channel_price_per_kg
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+          RETURNING *`,
+          [
+            scenarioId,
+            product_type,
+            product_type_custom || null,
+            distribution_percentage,
+            liters_per_kg_product || 0,
+            processing_cost_per_liter || 0,
+            packaging_cost_per_kg || 0,
+            sales_channel_direct_percentage || 100,
+            sales_channel_distributors_percentage || 0,
+            sales_channel_third_percentage || 0,
+            direct_sale_price_per_kg || null,
+            distributors_price_per_kg || null,
+            third_channel_price_per_kg || null,
+          ]
+        );
+        savedProducts.push(result.rows[0]);
+      }
+
+      // Recalculate and save results
+      await calculateAndSaveResults(pool, scenarioId);
+
+      res.json({ products: savedProducts });
+    } else {
+      // Legacy single product format - maintain backward compatibility
+      const {
+        product_type,
+        product_type_custom,
+        liters_per_kg_product,
+        processing_cost_per_liter,
+        packaging_cost_per_kg,
+        product_price_per_kg, // Legacy field
+        sales_channel_direct_percentage,
+        sales_channel_distributors_percentage,
+        sales_channel_third_percentage,
+        direct_sale_price_per_kg,
+        distributors_price_per_kg,
+        third_channel_price_per_kg,
+      } = req.body;
+
+      const result = await pool.query(
+        `INSERT INTO transformation_data (
+          scenario_id, product_type, product_type_custom, liters_per_kg_product,
+          processing_cost_per_liter, packaging_cost_per_kg, product_price_per_kg,
+          sales_channel_direct_percentage, sales_channel_distributors_percentage, sales_channel_third_percentage,
+          direct_sale_price_per_kg, distributors_price_per_kg, third_channel_price_per_kg
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+        ON CONFLICT (scenario_id) DO UPDATE SET
+          product_type = EXCLUDED.product_type,
+          product_type_custom = EXCLUDED.product_type_custom,
+          liters_per_kg_product = EXCLUDED.liters_per_kg_product,
+          processing_cost_per_liter = EXCLUDED.processing_cost_per_liter,
+          packaging_cost_per_kg = EXCLUDED.packaging_cost_per_kg,
+          product_price_per_kg = EXCLUDED.product_price_per_kg,
+          sales_channel_direct_percentage = EXCLUDED.sales_channel_direct_percentage,
+          sales_channel_distributors_percentage = EXCLUDED.sales_channel_distributors_percentage,
+          sales_channel_third_percentage = EXCLUDED.sales_channel_third_percentage,
+          direct_sale_price_per_kg = EXCLUDED.direct_sale_price_per_kg,
+          distributors_price_per_kg = EXCLUDED.distributors_price_per_kg,
+          third_channel_price_per_kg = EXCLUDED.third_channel_price_per_kg,
+          updated_at = CURRENT_TIMESTAMP
+        RETURNING *`,
+        [
+          scenarioId, product_type, product_type_custom || null, liters_per_kg_product, processing_cost_per_liter, 
+          packaging_cost_per_kg || 0, product_price_per_kg,
+          sales_channel_direct_percentage || 100, sales_channel_distributors_percentage || 0, sales_channel_third_percentage || 0,
+          direct_sale_price_per_kg, distributors_price_per_kg, third_channel_price_per_kg
+        ]
+      );
+
+      // Recalculate and save results
+      await calculateAndSaveResults(pool, scenarioId);
+
+      res.json(result.rows[0]);
+    }
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -218,10 +319,11 @@ router.post('/yield/:scenarioId', async (req, res) => {
 // Helper function to calculate and save results
 async function calculateAndSaveResults(pool, scenarioId) {
   // Get all scenario data
-  const [scenario, productionData, transformationData, lactationData, yieldData] = await Promise.all([
+  const [scenario, productionData, transformationData, transformationProducts, lactationData, yieldData] = await Promise.all([
     pool.query('SELECT * FROM scenarios WHERE id = $1', [scenarioId]),
     pool.query('SELECT * FROM production_data WHERE scenario_id = $1', [scenarioId]),
     pool.query('SELECT * FROM transformation_data WHERE scenario_id = $1', [scenarioId]),
+    pool.query('SELECT * FROM transformation_products WHERE scenario_id = $1 ORDER BY id', [scenarioId]),
     pool.query('SELECT * FROM lactation_data WHERE scenario_id = $1', [scenarioId]),
     pool.query('SELECT * FROM yield_data WHERE scenario_id = $1', [scenarioId]),
   ]);
@@ -230,7 +332,8 @@ async function calculateAndSaveResults(pool, scenarioId) {
 
   const scenarioData = {
     productionData: productionData.rows[0] || null,
-    transformationData: transformationData.rows[0] || null,
+    transformationData: transformationData.rows[0] || null, // Legacy single product
+    transformationProducts: transformationProducts.rows || [], // New: array of products
     lactationData: lactationData.rows[0] || null,
     yieldData: yieldData.rows[0] || null,
     scenarioType: scenario.rows[0].type,

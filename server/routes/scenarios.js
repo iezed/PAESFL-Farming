@@ -42,9 +42,10 @@ router.get('/:id', async (req, res) => {
     const scenario = scenarioResult.rows[0];
 
     // Get all related data
-    const [productionData, transformationData, lactationData, yieldData, results] = await Promise.all([
+    const [productionData, transformationData, transformationProducts, lactationData, yieldData, results] = await Promise.all([
       pool.query('SELECT * FROM production_data WHERE scenario_id = $1', [scenarioId]),
       pool.query('SELECT * FROM transformation_data WHERE scenario_id = $1', [scenarioId]),
+      pool.query('SELECT * FROM transformation_products WHERE scenario_id = $1 ORDER BY id', [scenarioId]),
       pool.query('SELECT * FROM lactation_data WHERE scenario_id = $1', [scenarioId]),
       pool.query('SELECT * FROM yield_data WHERE scenario_id = $1', [scenarioId]),
       pool.query('SELECT * FROM results WHERE scenario_id = $1', [scenarioId]),
@@ -53,7 +54,8 @@ router.get('/:id', async (req, res) => {
     res.json({
       ...scenario,
       productionData: productionData.rows[0] || null,
-      transformationData: transformationData.rows[0] || null,
+      transformationData: transformationData.rows[0] || null, // Keep for backward compatibility
+      transformationProducts: transformationProducts.rows || [], // New: array of products
       lactationData: lactationData.rows[0] || null,
       yieldData: yieldData.rows[0] || null,
       results: results.rows[0] || null,

@@ -12,15 +12,15 @@ function Module1Production({ user }) {
   const scenarioId = location.state?.scenarioId;
 
   const [formData, setFormData] = useState({
-    daily_production_liters: 0,
-    production_days: 0,
-    animals_count: 0,
-    feed_cost_per_liter: 0,
-    labor_cost_per_liter: 0,
-    health_cost_per_liter: 0,
-    infrastructure_cost_per_liter: 0,
-    other_costs_per_liter: 0,
-    milk_price_per_liter: 0,
+    daily_production_liters: '',
+    production_days: '',
+    animals_count: '',
+    feed_cost_per_liter: '',
+    labor_cost_per_liter: '',
+    health_cost_per_liter: '',
+    infrastructure_cost_per_liter: '',
+    other_costs_per_liter: '',
+    milk_price_per_liter: '',
   });
 
   const [results, setResults] = useState(null);
@@ -59,17 +59,19 @@ function Module1Production({ user }) {
       const scenario = response.data;
       setSelectedScenario(scenario);
       if (scenario.productionData) {
-        // Normalize all numeric values to ensure no leading zeros
+        // Convert numeric values to strings for input fields (empty string if 0 or null)
         const normalizedData = {};
         Object.keys(scenario.productionData).forEach(key => {
           const value = scenario.productionData[key];
-          if (typeof value === 'number') {
-            normalizedData[key] = value;
+          if (value === null || value === undefined || value === '') {
+            normalizedData[key] = '';
+          } else if (typeof value === 'number') {
+            normalizedData[key] = value === 0 ? '' : value.toString();
           } else if (typeof value === 'string') {
             const numValue = parseFloat(value);
-            normalizedData[key] = isNaN(numValue) ? 0 : numValue;
+            normalizedData[key] = isNaN(numValue) || numValue === 0 ? '' : value;
           } else {
-            normalizedData[key] = value;
+            normalizedData[key] = '';
           }
         });
         setFormData(normalizedData);
@@ -98,44 +100,32 @@ function Module1Production({ user }) {
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     
-    // Handle empty string
+    // Allow empty string, keep as string in state
+    // Only update if the value is a valid number or empty
     if (value === '' || value === null || value === undefined) {
       setFormData(prev => ({
         ...prev,
-        [name]: 0,
+        [name]: '',
       }));
       return;
     }
     
-    // Get the raw input value as string
-    let stringValue = value.toString();
-    
-    // Remove leading zeros that appear before non-zero digits
-    // Pattern: one or more zeros at the start, followed by a digit 1-9 (not 0, not decimal point)
-    // This will convert "01234" -> "1234", "056" -> "56", "012" -> "12"
-    // But will preserve "0", "0.5", "0.123" (since they have decimal point after the zero)
-    if (stringValue.length > 1 && stringValue[0] === '0' && stringValue[1] !== '.' && stringValue[1] !== ',') {
-      // Remove all leading zeros
-      stringValue = stringValue.replace(/^0+/, '');
-      // If we removed everything, set back to '0'
-      if (stringValue === '') {
-        stringValue = '0';
-      }
+    // Allow valid numeric input (including decimals and negative numbers if needed)
+    // Keep as string to allow free typing
+    const validNumberPattern = /^-?\d*\.?\d*$/;
+    if (validNumberPattern.test(value)) {
+      setFormData(prev => ({
+        ...prev,
+        [name]: value,
+      }));
     }
-    
-    // Parse the cleaned value to a number
-    const numValue = parseFloat(stringValue);
-    
-    // Update state with the numeric value
-    setFormData(prev => ({
-      ...prev,
-      [name]: isNaN(numValue) ? 0 : numValue,
-    }));
   };
 
   const handleInputFocus = (e) => {
-    // Always select all text when focused for easy replacement
-    e.target.select();
+    // Only select all text if field has a value, otherwise allow typing from scratch
+    if (e.target.value && e.target.value !== '') {
+      e.target.select();
+    }
   };
 
   const handleSave = async () => {
@@ -150,7 +140,36 @@ function Module1Production({ user }) {
 
     setLoading(true);
     try {
-      await api.post(`/modules/production/${selectedScenario.id}`, formData);
+      // Convert string values to numbers before sending to API
+      // Validate and clamp values to prevent overflow (DECIMAL(10,2) max: 99999999.99)
+      const MAX_DECIMAL_VALUE = 99999999.99;
+      const MIN_DECIMAL_VALUE = -99999999.99;
+      
+      const dataToSave = {};
+      Object.keys(formData).forEach(key => {
+        const value = formData[key];
+        if (value === '' || value === null || value === undefined) {
+          dataToSave[key] = 0;
+        } else {
+          const numValue = parseFloat(value);
+          if (isNaN(numValue) || !isFinite(numValue)) {
+            dataToSave[key] = 0;
+          } else {
+            // Clamp value to valid DECIMAL(10,2) range
+            dataToSave[key] = Math.max(MIN_DECIMAL_VALUE, Math.min(MAX_DECIMAL_VALUE, numValue));
+          }
+        }
+      });
+      
+      // For INTEGER fields, ensure they are integers and within valid range
+      if (dataToSave.production_days !== undefined) {
+        dataToSave.production_days = Math.max(0, Math.min(2147483647, Math.round(dataToSave.production_days)));
+      }
+      if (dataToSave.animals_count !== undefined) {
+        dataToSave.animals_count = Math.max(0, Math.min(2147483647, Math.round(dataToSave.animals_count)));
+      }
+      
+      await api.post(`/modules/production/${selectedScenario.id}`, dataToSave);
       await loadScenario(selectedScenario.id);
       // Trigger calculation after save
       handleCalculate();
@@ -171,15 +190,21 @@ function Module1Production({ user }) {
   };
 
   const handleCalculate = () => {
-    const totalLiters = formData.daily_production_liters * formData.production_days * formData.animals_count;
-    const costPerLiter = 
-      formData.feed_cost_per_liter +
-      formData.labor_cost_per_liter +
-      formData.health_cost_per_liter +
-      formData.infrastructure_cost_per_liter +
-      formData.other_costs_per_liter;
+    // Convert string values to numbers for calculations
+    const dailyProduction = parseFloat(formData.daily_production_liters) || 0;
+    const productionDays = parseFloat(formData.production_days) || 0;
+    const animalsCount = parseFloat(formData.animals_count) || 0;
+    const feedCost = parseFloat(formData.feed_cost_per_liter) || 0;
+    const laborCost = parseFloat(formData.labor_cost_per_liter) || 0;
+    const healthCost = parseFloat(formData.health_cost_per_liter) || 0;
+    const infrastructureCost = parseFloat(formData.infrastructure_cost_per_liter) || 0;
+    const otherCost = parseFloat(formData.other_costs_per_liter) || 0;
+    const milkPrice = parseFloat(formData.milk_price_per_liter) || 0;
+    
+    const totalLiters = dailyProduction * productionDays * animalsCount;
+    const costPerLiter = feedCost + laborCost + healthCost + infrastructureCost + otherCost;
     const totalCosts = costPerLiter * totalLiters;
-    const totalRevenue = formData.milk_price_per_liter * totalLiters;
+    const totalRevenue = milkPrice * totalLiters;
     const grossMargin = totalRevenue - totalCosts;
     const marginPercentage = totalRevenue > 0 ? (grossMargin / totalRevenue) * 100 : 0;
 
@@ -189,11 +214,11 @@ function Module1Production({ user }) {
       total_costs: totalCosts,
       gross_margin: grossMargin,
       margin_percentage: marginPercentage,
-      revenue_per_liter: formData.milk_price_per_liter,
+      revenue_per_liter: milkPrice,
       cost_per_liter: costPerLiter,
       // Store base values for period calculations
-      daily_production: formData.daily_production_liters * formData.animals_count,
-      production_days: formData.production_days,
+      daily_production: dailyProduction * animalsCount,
+      production_days: productionDays,
     });
   };
 
