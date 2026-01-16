@@ -49,7 +49,7 @@ function Sidebar({ user, onLogout }) {
   );
 }
 
-function Settings({ showSidebar, setShowSidebar, showFooter, setShowFooter }) {
+function Settings({ showSidebar, setShowSidebar, showFooter, setShowFooter, darkMode, setDarkMode }) {
   const { t } = useI18n();
   const [isOpen, setIsOpen] = useState(false);
   const settingsRef = useRef(null);
@@ -106,6 +106,19 @@ function Settings({ showSidebar, setShowSidebar, showFooter, setShowFooter }) {
                     type="checkbox"
                     checked={showFooter}
                     onChange={(e) => setShowFooter(e.target.checked)}
+                  />
+                  <span className="toggle-slider"></span>
+                </div>
+              </label>
+            </div>
+            <div className="settings-item">
+              <label className="settings-label">
+                <span>{t('darkMode') || 'Dark Mode'}</span>
+                <div className="toggle-switch">
+                  <input
+                    type="checkbox"
+                    checked={darkMode}
+                    onChange={(e) => setDarkMode(e.target.checked)}
                   />
                   <span className="toggle-slider"></span>
                 </div>
@@ -221,7 +234,7 @@ function UserAvatar({ user, onLogout }) {
   );
 }
 
-function Header({ user, onLogout, showSidebar, setShowSidebar, showFooter, setShowFooter }) {
+function Header({ user, onLogout, showSidebar, setShowSidebar, showFooter, setShowFooter, darkMode, setDarkMode }) {
   const { t, language, changeLanguage } = useI18n();
   const isAuthenticated = !!getAuthToken();
   const hasSidebar = isAuthenticated && showSidebar;
@@ -283,6 +296,8 @@ function Header({ user, onLogout, showSidebar, setShowSidebar, showFooter, setSh
                 setShowSidebar={setShowSidebar}
                 showFooter={showFooter}
                 setShowFooter={setShowFooter}
+                darkMode={darkMode}
+                setDarkMode={setDarkMode}
               />
               <UserAvatar user={user} onLogout={onLogout} />
             </>
@@ -329,6 +344,11 @@ function Layout({ children, user, onLogout }) {
     return saved !== null ? saved === 'true' : true; // Default to true
   });
 
+  const [darkMode, setDarkMode] = useState(() => {
+    const saved = localStorage.getItem('darkMode');
+    return saved !== null ? saved === 'true' : false; // Default to false (light mode)
+  });
+
   // Save settings to localStorage when they change
   useEffect(() => {
     localStorage.setItem('showSidebar', showSidebar.toString());
@@ -337,6 +357,24 @@ function Layout({ children, user, onLogout }) {
   useEffect(() => {
     localStorage.setItem('showFooter', showFooter.toString());
   }, [showFooter]);
+
+  // Apply theme to document root on mount and when it changes
+  useEffect(() => {
+    localStorage.setItem('darkMode', darkMode.toString());
+    if (darkMode) {
+      document.documentElement.classList.add('dark-mode');
+    } else {
+      document.documentElement.classList.remove('dark-mode');
+    }
+  }, [darkMode]);
+
+  // Initialize theme on mount
+  useEffect(() => {
+    const savedDarkMode = localStorage.getItem('darkMode');
+    if (savedDarkMode === 'true') {
+      document.documentElement.classList.add('dark-mode');
+    }
+  }, []);
 
   // Adjust grid layout based on sidebar and footer visibility
   let gridClass = isAuthenticated 
@@ -360,6 +398,8 @@ function Layout({ children, user, onLogout }) {
           setShowSidebar={setShowSidebar}
           showFooter={showFooter}
           setShowFooter={setShowFooter}
+          darkMode={darkMode}
+          setDarkMode={setDarkMode}
         />
         <main className="site-main">
           {children}
@@ -389,6 +429,8 @@ function Layout({ children, user, onLogout }) {
         setShowSidebar={setShowSidebar}
         showFooter={showFooter}
         setShowFooter={setShowFooter}
+        darkMode={darkMode}
+        setDarkMode={setDarkMode}
       />
       <main className="site-main">
         {children}

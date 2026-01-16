@@ -235,8 +235,26 @@ router.post('/compare', async (req, res) => {
       return res.status(404).json({ error: 'One or more scenarios not found' });
     }
 
+    // Load transformation products for all scenarios
+    const transformationProductsResult = await pool.query(
+      'SELECT * FROM transformation_products WHERE scenario_id = ANY($1::int[]) ORDER BY scenario_id, id',
+      [scenarioIds]
+    );
+
+    // Group transformation products by scenario_id
+    const productsByScenario = {};
+    transformationProductsResult.rows.forEach(product => {
+      if (!productsByScenario[product.scenario_id]) {
+        productsByScenario[product.scenario_id] = [];
+      }
+      productsByScenario[product.scenario_id].push(product);
+    });
+
     // Run simulation for each scenario
     const comparisons = scenariosResult.rows.map(row => {
+      // Build transformationData (legacy) or transformationProducts (new)
+      const scenarioProducts = productsByScenario[row.id] || [];
+      
       const scenarioData = {
         productionData: row.daily_production_liters ? {
           daily_production_liters: row.daily_production_liters,
@@ -249,12 +267,13 @@ router.post('/compare', async (req, res) => {
           other_costs_per_liter: row.other_costs_per_liter,
           milk_price_per_liter: row.milk_price_per_liter,
         } : null,
-        transformationData: row.product_type ? {
+        transformationData: (scenarioProducts.length === 0 && row.product_type) ? {
           product_type: row.product_type,
           liters_per_kg_product: row.liters_per_kg_product,
           processing_cost_per_liter: row.processing_cost_per_liter,
           product_price_per_kg: row.product_price_per_kg,
         } : null,
+        transformationProducts: scenarioProducts.length > 0 ? scenarioProducts : null,
         lactationData: row.lactation_days ? {
           lactation_days: row.lactation_days,
           dry_days: row.dry_days,

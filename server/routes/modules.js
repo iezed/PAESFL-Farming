@@ -145,7 +145,11 @@ router.post('/transformation/:scenarioId', async (req, res) => {
           distribution_percentage,
           liters_per_kg_product,
           processing_cost_per_liter,
+          processing_cost_per_kg,
+          processing_cost_unit,
+          packaging_cost_per_liter,
           packaging_cost_per_kg,
+          packaging_cost_unit,
           sales_channel_direct_percentage,
           sales_channel_distributors_percentage,
           sales_channel_third_percentage,
@@ -157,10 +161,12 @@ router.post('/transformation/:scenarioId', async (req, res) => {
         const result = await pool.query(
           `INSERT INTO transformation_products (
             scenario_id, product_type, product_type_custom, distribution_percentage,
-            liters_per_kg_product, processing_cost_per_liter, packaging_cost_per_kg,
+            liters_per_kg_product, 
+            processing_cost_per_liter, processing_cost_per_kg, processing_cost_unit,
+            packaging_cost_per_liter, packaging_cost_per_kg, packaging_cost_unit,
             sales_channel_direct_percentage, sales_channel_distributors_percentage, sales_channel_third_percentage,
             direct_sale_price_per_kg, distributors_price_per_kg, third_channel_price_per_kg
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
           RETURNING *`,
           [
             scenarioId,
@@ -169,7 +175,11 @@ router.post('/transformation/:scenarioId', async (req, res) => {
             distribution_percentage,
             liters_per_kg_product || 0,
             processing_cost_per_liter || 0,
+            processing_cost_per_kg || 0,
+            processing_cost_unit || 'liter',
+            packaging_cost_per_liter || 0,
             packaging_cost_per_kg || 0,
+            packaging_cost_unit || 'kg',
             sales_channel_direct_percentage || 100,
             sales_channel_distributors_percentage || 0,
             sales_channel_third_percentage || 0,

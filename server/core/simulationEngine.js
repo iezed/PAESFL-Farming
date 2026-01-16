@@ -117,16 +117,34 @@ export function calculateTransformationMetricsProductMix(productionData, transfo
   for (const product of transformationProducts) {
     const distributionPct = Number(product.distribution_percentage) || 0;
     const litersPerKg = Number(product.liters_per_kg_product) || 1;
+    
+    // Unit selection: processing and packaging costs can be per liter or per kg
+    const processingCostUnit = product.processing_cost_unit || 'liter';
+    const packagingCostUnit = product.packaging_cost_unit || 'kg';
     const processingCostPerLiter = Number(product.processing_cost_per_liter) || 0;
+    const processingCostPerKg = Number(product.processing_cost_per_kg) || 0;
+    const packagingCostPerLiter = Number(product.packaging_cost_per_liter) || 0;
     const packagingCostPerKg = Number(product.packaging_cost_per_kg) || 0;
 
     // Calculate liters allocated to this product
     const productLiters = totalLiters * (distributionPct / 100);
     const productKg = productLiters / litersPerKg;
 
-    // Calculate costs for this product
-    const productProcessingCost = processingCostPerLiter * productLiters;
-    const productPackagingCost = packagingCostPerKg * productKg;
+    // Calculate costs based on unit selection
+    let productProcessingCost = 0;
+    if (processingCostUnit === 'liter') {
+      productProcessingCost = processingCostPerLiter * productLiters;
+    } else if (processingCostUnit === 'kg') {
+      productProcessingCost = processingCostPerKg * productKg;
+    }
+
+    let productPackagingCost = 0;
+    if (packagingCostUnit === 'liter') {
+      productPackagingCost = packagingCostPerLiter * productLiters;
+    } else if (packagingCostUnit === 'kg') {
+      productPackagingCost = packagingCostPerKg * productKg;
+    }
+
     const productMilkCost = totalMilkProductionCostPerLiter * productLiters;
 
     // Calculate revenue by sales channel for this product
@@ -155,11 +173,14 @@ export function calculateTransformationMetricsProductMix(productionData, transfo
       product_type: product.product_type,
       product_type_custom: product.product_type_custom,
       distribution_percentage: distributionPct,
+      productLiters,
       productKg,
       productRevenue,
       processingCost: productProcessingCost,
       packagingCost: productPackagingCost,
       milkCost: productMilkCost,
+      processingCostUnit,
+      packagingCostUnit,
       salesChannels: {
         direct: { percentage: directPct, kg: directKg, pricePerKg: directPrice, revenue: directRevenue },
         distributors: { percentage: distPct, kg: distKg, pricePerKg: distPrice, revenue: distRevenue },
@@ -170,13 +191,20 @@ export function calculateTransformationMetricsProductMix(productionData, transfo
 
   const totalProductKg = productsBreakdown.reduce((sum, p) => sum + p.productKg, 0);
 
+  // Calculate total liters used in transformation
+  const totalTransformationLiters = productsBreakdown.reduce((sum, p) => sum + p.productLiters, 0);
+
   return {
     totalProductKg,
+    totalTransformationLiters,
     processingCost: totalProcessingCost,
     packagingCost: totalPackagingCost,
     productRevenue: totalProductRevenue,
     revenuePerKg: totalProductKg > 0 ? totalProductRevenue / totalProductKg : 0,
     productsBreakdown,
+    // For audit trail: average weighted price and costs
+    averageWeightedPrice: totalProductKg > 0 ? totalProductRevenue / totalProductKg : 0,
+    averageWeightedCost: totalProductKg > 0 ? (totalProcessingCost + totalPackagingCost + (totalMilkProductionCostPerLiter * totalTransformationLiters)) / totalProductKg : 0,
   };
 }
 

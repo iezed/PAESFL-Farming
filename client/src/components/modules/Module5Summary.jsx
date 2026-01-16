@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import api from '../../utils/api';
 import { useI18n } from '../../i18n/I18nContext';
 import AlertModal from '../AlertModal';
@@ -13,6 +13,21 @@ function Module5Summary({ user }) {
   const [comparison, setComparison] = useState(null);
   const [loading, setLoading] = useState(false);
   const [alertModal, setAlertModal] = useState({ isOpen: false, message: '', type: 'success' });
+  const [expandedBreakdown, setExpandedBreakdown] = useState({});
+
+  // Helper function to determine scenario type label
+  const getScenarioTypeLabel = (item) => {
+    if (!item.results.transformationMetrics) {
+      return 'Solo leche';
+    }
+    // If has transformation but might also have direct milk sale
+    const hasTransformation = item.results.transformationMetrics && 
+      (item.results.transformationMetrics.productRevenue || 0) > 0;
+    if (hasTransformation && item.results.revenue?.totalRevenue > 0) {
+      return 'Mixto';
+    }
+    return 'Transformación';
+  };
 
   useEffect(() => {
     loadScenarios();
@@ -54,16 +69,53 @@ function Module5Summary({ user }) {
     }
   };
 
-  const comparisonData = comparison ? comparison.map(item => ({
-    name: item.scenario.name,
-    [t('income')]: Number(item.results.totalRevenue || 0),
-    [t('totalCosts')]: Number(item.results.totalCosts || 0),
-    [t('margin')]: Number(item.results.grossMargin || 0),
-    [t('marginPercentage')]: Number(item.results.marginPercentage || 0),
-  })) : [];
+  // Sort comparison by different criteria for ranking
+  const getRankedByRevenue = () => {
+    if (!comparison) return [];
+    return [...comparison].sort((a, b) => 
+      Number(b.results.totalRevenue || 0) - Number(a.results.totalRevenue || 0)
+    );
+  };
+
+  const getRankedByMargin = () => {
+    if (!comparison) return [];
+    return [...comparison].sort((a, b) => 
+      Number(b.results.grossMargin || 0) - Number(a.results.grossMargin || 0)
+    );
+  };
+
+  const getRankedByMarginPercent = () => {
+    if (!comparison) return [];
+    return [...comparison].sort((a, b) => 
+      Number(b.results.marginPercentage || 0) - Number(a.results.marginPercentage || 0)
+    );
+  };
+
+  const comparisonData = comparison ? comparison.map((item, idx) => {
+    const rankedByRevenue = getRankedByRevenue();
+    const rankedByMargin = getRankedByMargin();
+    const rankedByMarginPercent = getRankedByMarginPercent();
+    
+    const revenueRank = rankedByRevenue.findIndex(s => s.scenario.id === item.scenario.id) + 1;
+    const marginRank = rankedByMargin.findIndex(s => s.scenario.id === item.scenario.id) + 1;
+    const marginPercentRank = rankedByMarginPercent.findIndex(s => s.scenario.id === item.scenario.id) + 1;
+
+    return {
+      name: item.scenario.name,
+      nameWithLabel: `${item.scenario.name} [${getScenarioTypeLabel(item)}]`,
+      [t('income')]: Number(item.results.totalRevenue || 0),
+      [t('totalCosts')]: Number(item.results.totalCosts || 0),
+      [t('margin')]: Number(item.results.grossMargin || 0),
+      [t('marginPercentage')]: Number(item.results.marginPercentage || 0),
+      revenueRank,
+      marginRank,
+      marginPercentRank,
+      typeLabel: getScenarioTypeLabel(item),
+    };
+  }) : [];
 
   const revenueData = comparison ? comparison.map(item => ({
-    name: item.scenario.name,
+    name: `${item.scenario.name} [${getScenarioTypeLabel(item)}]`,
     [t('income')]: Number(item.results.totalRevenue || 0),
   })) : [];
 
@@ -129,24 +181,58 @@ function Module5Summary({ user }) {
               <thead>
                 <tr>
                   <th>{t('scenario')}</th>
+                  <th>{t('type')}</th>
                   <th>{t('productionL')}</th>
                   <th>{t('income')}</th>
                   <th>{t('totalCosts')}</th>
                   <th>{t('grossMargin')}</th>
                   <th>{t('marginPercentage')}</th>
+                  <th>{t('ranking')}</th>
                 </tr>
               </thead>
               <tbody>
-                {comparison.map((item, index) => (
-                  <tr key={index}>
-                    <td><strong>{item.scenario.name}</strong></td>
-                    <td>{Number(item.results.totalProductionLiters || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
-                    <td>${Number(item.results.totalRevenue || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
-                    <td>${Number(item.results.totalCosts || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
-                    <td>${Number(item.results.grossMargin || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
-                    <td>{Number(item.results.marginPercentage || 0).toFixed(2)}%</td>
-                  </tr>
-                ))}
+                {comparison.map((item, index) => {
+                  const dataItem = comparisonData[index];
+                  const isBestRevenue = dataItem?.revenueRank === 1;
+                  const isBestMargin = dataItem?.marginRank === 1;
+                  const isBestMarginPercent = dataItem?.marginPercentRank === 1;
+                  
+                  return (
+                    <tr 
+                      key={index}
+                      style={{
+                        backgroundColor: isBestMargin ? '#e8f5e9' : 'transparent'
+                      }}
+                    >
+                      <td><strong>{item.scenario.name}</strong></td>
+                      <td>
+                        <span style={{
+                          padding: '4px 8px',
+                          borderRadius: '4px',
+                          fontSize: '0.85em',
+                          backgroundColor: dataItem?.typeLabel === 'Solo leche' ? '#e3f2fd' :
+                                         dataItem?.typeLabel === 'Transformación' ? '#fff3e0' : '#f3e5f5',
+                          color: dataItem?.typeLabel === 'Solo leche' ? '#1976d2' :
+                                dataItem?.typeLabel === 'Transformación' ? '#e65100' : '#7b1fa2',
+                        }}>
+                          {dataItem?.typeLabel || getScenarioTypeLabel(item)}
+                        </span>
+                      </td>
+                      <td>{Number(item.results.totalProductionLiters || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
+                      <td>${Number(item.results.totalRevenue || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
+                      <td>${Number(item.results.totalCosts || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
+                      <td>${Number(item.results.grossMargin || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
+                      <td>{Number(item.results.marginPercentage || 0).toFixed(2)}%</td>
+                      <td>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '0.85em' }}>
+                          {isBestRevenue && <span style={{ color: '#1976d2' }}>🥇 {t('bestByRevenue')}</span>}
+                          {isBestMargin && <span style={{ color: '#2e7d32' }}>🥇 {t('bestByMargin')}</span>}
+                          {isBestMarginPercent && <span style={{ color: '#7b1fa2' }}>🥇 {t('bestByMarginPercent')}</span>}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -157,7 +243,7 @@ function Module5Summary({ user }) {
             <ResponsiveContainer width="100%" height={400}>
               <BarChart data={comparisonData}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
+                <XAxis dataKey="nameWithLabel" angle={-45} textAnchor="end" height={100} />
                 <YAxis />
                 <Tooltip formatter={(value) => `$${Number(value || 0).toLocaleString(undefined)}`} />
                 <Legend />
@@ -183,7 +269,7 @@ function Module5Summary({ user }) {
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={comparisonData}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
+                <XAxis dataKey="nameWithLabel" angle={-45} textAnchor="end" height={100} />
                 <YAxis />
                 <Tooltip formatter={(value) => `${Number(value || 0).toFixed(2)}%`} />
                 <Legend />
@@ -191,6 +277,118 @@ function Module5Summary({ user }) {
               </BarChart>
             </ResponsiveContainer>
           </div>
+
+          {/* Product Mix and Channel Mix Visualization */}
+          {comparison && comparison.length > 0 && (
+            <div className="card">
+              <h2>Análisis de Mix</h2>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '30px', marginTop: '20px' }}>
+                {/* Product Mix Visualization */}
+                {comparison.some(item => item.results.transformationMetrics?.productsBreakdown) && (
+                  <div>
+                    <h3 style={{ marginBottom: '15px' }}>Mix de Productos por Escenario</h3>
+                    {comparison.filter(item => item.results.transformationMetrics?.productsBreakdown).map((item, idx) => {
+                      const productsData = item.results.transformationMetrics.productsBreakdown.map(p => ({
+                        name: p.product_type_custom || p.product_type || 'Producto',
+                        value: p.distribution_percentage || 0,
+                      }));
+                      
+                      const COLORS = ['#8884d8', '#82ca9d', '#ffc658', '#ff7300', '#00ff00', '#0088fe'];
+                      
+                      return (
+                        <div key={idx} style={{ marginBottom: '30px' }}>
+                          <h4 style={{ fontSize: '0.95em', marginBottom: '10px' }}>{item.scenario.name}</h4>
+                          <ResponsiveContainer width="100%" height={250}>
+                            <PieChart>
+                              <Pie
+                                data={productsData}
+                                cx="50%"
+                                cy="50%"
+                                labelLine={false}
+                                label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                                outerRadius={80}
+                                fill="#8884d8"
+                                dataKey="value"
+                              >
+                                {productsData.map((entry, index) => (
+                                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                ))}
+                              </Pie>
+                              <Tooltip />
+                            </PieChart>
+                          </ResponsiveContainer>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* Channel Mix Visualization */}
+                {comparison.some(item => item.results.transformationMetrics?.productsBreakdown) && (
+                  <div>
+                    <h3 style={{ marginBottom: '15px' }}>Mix de Canales por Escenario</h3>
+                    {comparison.filter(item => item.results.transformationMetrics?.productsBreakdown).map((item, idx) => {
+                      // Aggregate channels across all products by kg
+                      let totalKgDirect = 0;
+                      let totalKgDistributors = 0;
+                      let totalKgThird = 0;
+                      let totalKg = 0;
+                      
+                      item.results.transformationMetrics.productsBreakdown.forEach(product => {
+                        if (product.salesChannels && product.productKg) {
+                          totalKgDirect += product.salesChannels.direct?.kg || 0;
+                          totalKgDistributors += product.salesChannels.distributors?.kg || 0;
+                          totalKgThird += product.salesChannels.third?.kg || 0;
+                          totalKg += product.productKg;
+                        }
+                      });
+                      
+                      // Calculate percentages based on total kg
+                      const channelsData = [];
+                      if (totalKg > 0) {
+                        if (totalKgDirect > 0) {
+                          channelsData.push({ name: t('salesChannelDirect') || 'Directo', value: (totalKgDirect / totalKg) * 100 });
+                        }
+                        if (totalKgDistributors > 0) {
+                          channelsData.push({ name: t('salesChannelDistributors') || 'Distribuidores', value: (totalKgDistributors / totalKg) * 100 });
+                        }
+                        if (totalKgThird > 0) {
+                          channelsData.push({ name: t('salesChannelThird') || 'Tercer Canal', value: (totalKgThird / totalKg) * 100 });
+                        }
+                      }
+                      
+                      const COLORS_CHANNELS = ['#8884d8', '#82ca9d', '#ffc658'];
+                      
+                      return (
+                        <div key={idx} style={{ marginBottom: '30px' }}>
+                          <h4 style={{ fontSize: '0.95em', marginBottom: '10px' }}>{item.scenario.name}</h4>
+                          <ResponsiveContainer width="100%" height={250}>
+                            <PieChart>
+                              <Pie
+                                data={channelsData}
+                                cx="50%"
+                                cy="50%"
+                                labelLine={false}
+                                label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                                outerRadius={80}
+                                fill="#8884d8"
+                                dataKey="value"
+                              >
+                                {channelsData.map((entry, index) => (
+                                  <Cell key={`cell-${index}`} fill={COLORS_CHANNELS[index % COLORS_CHANNELS.length]} />
+                                ))}
+                              </Pie>
+                              <Tooltip />
+                            </PieChart>
+                          </ResponsiveContainer>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
           <div className="card">
             <h2>{t('executiveSummary')}</h2>
@@ -213,6 +411,109 @@ function Module5Summary({ user }) {
                 }</p>
               </div>
             )}
+          </div>
+
+          {/* Calculation Breakdown Panel */}
+          <div className="card">
+            <h2>{t('calculationBreakdown') || 'Desglose de Cálculo'}</h2>
+            {comparison.map((item, idx) => {
+              const isExpanded = expandedBreakdown[item.scenario.id];
+              const tm = item.results.transformationMetrics;
+              
+              return (
+                <div key={idx} style={{ marginBottom: '20px', border: '1px solid #e0e0e0', borderRadius: '8px', padding: '15px' }}>
+                  <div 
+                    style={{ 
+                      display: 'flex', 
+                      justifyContent: 'space-between', 
+                      alignItems: 'center',
+                      cursor: 'pointer'
+                    }}
+                    onClick={() => setExpandedBreakdown({
+                      ...expandedBreakdown,
+                      [item.scenario.id]: !isExpanded
+                    })}
+                  >
+                    <h3 style={{ margin: 0 }}>{item.scenario.name} - {getScenarioTypeLabel(item)}</h3>
+                    <span>{isExpanded ? '▼' : '▶'}</span>
+                  </div>
+                  
+                  {isExpanded && (
+                    <div style={{ marginTop: '15px', paddingTop: '15px', borderTop: '1px solid #e0e0e0' }}>
+                      {tm ? (
+                        <>
+                          <h4>{t('transformationDetails') || 'Detalles de Transformación'}</h4>
+                          <table className="table" style={{ fontSize: '0.9em' }}>
+                            <tbody>
+                              <tr>
+                                <td><strong>{t('litersUsedTransformation') || 'Litros usados en transformación'}:</strong></td>
+                                <td>{Number(tm.totalTransformationLiters || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })} L</td>
+                              </tr>
+                              <tr>
+                                <td><strong>{t('totalKgProduced') || 'Total kg/L producidos'}:</strong></td>
+                                <td>{Number(tm.totalProductKg || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })} kg</td>
+                              </tr>
+                              <tr>
+                                <td><strong>{t('averageWeightedPrice') || 'Precio promedio ponderado'}:</strong></td>
+                                <td>${Number(tm.averageWeightedPrice || 0).toFixed(2)} / kg</td>
+                              </tr>
+                              <tr>
+                                <td><strong>{t('averageWeightedCost') || 'Costo promedio ponderado unitario'}:</strong></td>
+                                <td>${Number(tm.averageWeightedCost || 0).toFixed(2)} / kg</td>
+                              </tr>
+                              <tr>
+                                <td><strong>{t('totalTransformationRevenue') || 'Ingreso total transformación'}:</strong></td>
+                                <td>${Number(tm.productRevenue || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
+                              </tr>
+                              <tr>
+                                <td><strong>{t('totalTransformationCost') || 'Costo total transformación'}:</strong></td>
+                                <td>${Number((tm.processingCost || 0) + (tm.packagingCost || 0) + (item.results.costs?.totalCosts || 0)).toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
+                              </tr>
+                              <tr>
+                                <td><strong>{t('totalTransformationMargin') || 'Margen total transformación'}:</strong></td>
+                                <td>${Number(item.results.grossMargin || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </>
+                      ) : (
+                        <>
+                          <h4>{t('directSaleDetails') || 'Detalles de Venta Directa de Leche'}</h4>
+                          <table className="table" style={{ fontSize: '0.9em' }}>
+                            <tbody>
+                              <tr>
+                                <td><strong>{t('totalLiters') || 'Total litros'}:</strong></td>
+                                <td>{Number(item.results.totalProductionLiters || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })} L</td>
+                              </tr>
+                              <tr>
+                                <td><strong>{t('revenuePerLiter') || 'Precio por litro'}:</strong></td>
+                                <td>${Number(item.results.revenue?.revenuePerLiter || 0).toFixed(2)} / L</td>
+                              </tr>
+                              <tr>
+                                <td><strong>{t('costPerLiter') || 'Costo por litro'}:</strong></td>
+                                <td>${Number(item.results.costs?.costPerLiter || 0).toFixed(2)} / L</td>
+                              </tr>
+                              <tr>
+                                <td><strong>{t('totalRevenue') || 'Ingreso total'}:</strong></td>
+                                <td>${Number(item.results.totalRevenue || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
+                              </tr>
+                              <tr>
+                                <td><strong>{t('totalCosts') || 'Costo total'}:</strong></td>
+                                <td>${Number(item.results.totalCosts || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
+                              </tr>
+                              <tr>
+                                <td><strong>{t('grossMargin') || 'Margen bruto'}:</strong></td>
+                                <td>${Number(item.results.grossMargin || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </>
       )}

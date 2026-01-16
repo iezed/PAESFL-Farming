@@ -28,6 +28,7 @@ export const translations = {
     settings: 'Settings',
     showSidebar: 'Show Sidebar',
     showFooter: 'Show Footer',
+    darkMode: 'Dark Mode',
     profile: 'Profile',
     
     // Profile
@@ -366,6 +367,7 @@ export const translations = {
     settings: 'Configuración',
     showSidebar: 'Mostrar Barra Lateral',
     showFooter: 'Mostrar Pie de Página',
+    darkMode: 'Modo Oscuro',
     profile: 'Perfil',
     
     // Profile

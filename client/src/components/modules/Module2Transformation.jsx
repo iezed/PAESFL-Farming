@@ -32,7 +32,11 @@ function Module2Transformation({ user }) {
       distribution_percentage: '100',
       liters_per_kg_product: '',
       processing_cost_per_liter: '',
+      processing_cost_per_kg: '',
+      processing_cost_unit: 'liter', // 'liter' or 'kg'
+      packaging_cost_per_liter: '',
       packaging_cost_per_kg: '',
+      packaging_cost_unit: 'kg', // 'liter' or 'kg'
       sales_channel_direct_percentage: '100',
       sales_channel_distributors_percentage: '',
       sales_channel_third_percentage: '',
@@ -143,7 +147,11 @@ function Module2Transformation({ user }) {
           distribution_percentage: convertToInputValue(product.distribution_percentage) || '',
           liters_per_kg_product: convertToInputValue(product.liters_per_kg_product),
           processing_cost_per_liter: convertToInputValue(product.processing_cost_per_liter),
+          processing_cost_per_kg: convertToInputValue(product.processing_cost_per_kg),
+          processing_cost_unit: product.processing_cost_unit || 'liter',
+          packaging_cost_per_liter: convertToInputValue(product.packaging_cost_per_liter),
           packaging_cost_per_kg: convertToInputValue(product.packaging_cost_per_kg),
+          packaging_cost_unit: product.packaging_cost_unit || 'kg',
           sales_channel_direct_percentage: convertToInputValue(product.sales_channel_direct_percentage) || '100',
           sales_channel_distributors_percentage: convertToInputValue(product.sales_channel_distributors_percentage),
           sales_channel_third_percentage: convertToInputValue(product.sales_channel_third_percentage),
@@ -278,7 +286,11 @@ function Module2Transformation({ user }) {
       distribution_percentage: '',
       liters_per_kg_product: '',
       processing_cost_per_liter: '',
+      processing_cost_per_kg: '',
+      processing_cost_unit: 'liter',
+      packaging_cost_per_liter: '',
       packaging_cost_per_kg: '',
+      packaging_cost_unit: 'kg',
       sales_channel_direct_percentage: '100',
       sales_channel_distributors_percentage: '',
       sales_channel_third_percentage: '',
@@ -301,8 +313,9 @@ function Module2Transformation({ user }) {
   };
 
   const handleProductChange = (productId, fieldName, value) => {
-    // Handle string fields (product_type, product_type_custom) - no validation needed
-    if (fieldName === 'product_type' || fieldName === 'product_type_custom') {
+    // Handle string fields (product_type, product_type_custom, unit fields) - no validation needed
+    if (fieldName === 'product_type' || fieldName === 'product_type_custom' || 
+        fieldName === 'processing_cost_unit' || fieldName === 'packaging_cost_unit') {
       setProducts(prev => prev.map(product => 
         product.id === productId ? { ...product, [fieldName]: value } : product
       ));
@@ -384,7 +397,11 @@ function Module2Transformation({ user }) {
         distribution_percentage: parseFloat(product.distribution_percentage) || 0,
         liters_per_kg_product: parseFloat(product.liters_per_kg_product) || 0,
         processing_cost_per_liter: parseFloat(product.processing_cost_per_liter) || 0,
+        processing_cost_per_kg: parseFloat(product.processing_cost_per_kg) || 0,
+        processing_cost_unit: product.processing_cost_unit || 'liter',
+        packaging_cost_per_liter: parseFloat(product.packaging_cost_per_liter) || 0,
         packaging_cost_per_kg: parseFloat(product.packaging_cost_per_kg) || 0,
+        packaging_cost_unit: product.packaging_cost_unit || 'kg',
         sales_channel_direct_percentage: parseFloat(product.sales_channel_direct_percentage) || 100,
         sales_channel_distributors_percentage: parseFloat(product.sales_channel_distributors_percentage) || 0,
         sales_channel_third_percentage: parseFloat(product.sales_channel_third_percentage) || 0,
@@ -434,16 +451,33 @@ function Module2Transformation({ user }) {
     for (const product of products) {
       const distributionPct = parseFloat(product.distribution_percentage) || 0;
       const litersPerKg = parseFloat(product.liters_per_kg_product) || 1;
+      
+      // Unit selection: processing and packaging costs can be per liter or per kg
+      const processingCostUnit = product.processing_cost_unit || 'liter';
+      const packagingCostUnit = product.packaging_cost_unit || 'kg';
       const processingCostPerLiter = parseFloat(product.processing_cost_per_liter) || 0;
+      const processingCostPerKg = parseFloat(product.processing_cost_per_kg) || 0;
+      const packagingCostPerLiter = parseFloat(product.packaging_cost_per_liter) || 0;
       const packagingCostPerKg = parseFloat(product.packaging_cost_per_kg) || 0;
       
       // Calculate liters allocated to this product
       const productLiters = totalLiters * (distributionPct / 100);
       const productKg = productLiters / litersPerKg;
       
-      // Calculate costs for this product
-      const productProcessingCost = processingCostPerLiter * productLiters;
-      const productPackagingCost = packagingCostPerKg * productKg;
+      // Calculate costs based on unit selection
+      let productProcessingCost = 0;
+      if (processingCostUnit === 'liter') {
+        productProcessingCost = processingCostPerLiter * productLiters;
+      } else if (processingCostUnit === 'kg') {
+        productProcessingCost = processingCostPerKg * productKg;
+      }
+      
+      let productPackagingCost = 0;
+      if (packagingCostUnit === 'liter') {
+        productPackagingCost = packagingCostPerLiter * productLiters;
+      } else if (packagingCostUnit === 'kg') {
+        productPackagingCost = packagingCostPerKg * productKg;
+      }
       
       // Calculate revenue by sales channel for this product
       const directPct = (parseFloat(product.sales_channel_direct_percentage) || 0) / 100;
@@ -732,26 +766,90 @@ function Module2Transformation({ user }) {
                     />
                   </div>
 
-                  <div className="form-group">
-                    <label>{t('processingCost')}</label>
-                    <input
-                      type="number"
-                      value={product.processing_cost_per_liter}
-                      onChange={(e) => handleProductChange(product.id, 'processing_cost_per_liter', e.target.value)}
-                      onFocus={handleInputFocus}
-                      step="0.01"
-                    />
+                  <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+                    <label>
+                      {t('processingCost')} 
+                      <span style={{ 
+                        marginLeft: '8px', 
+                        padding: '2px 8px', 
+                        background: '#e3f2fd', 
+                        borderRadius: '4px', 
+                        fontSize: '0.85em',
+                        fontWeight: 'normal'
+                      }}>
+                        {product.processing_cost_unit === 'liter' ? '($/L)' : '($/kg)'}
+                      </span>
+                    </label>
+                    <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                      <select
+                        value={product.processing_cost_unit || 'liter'}
+                        onChange={(e) => handleProductChange(product.id, 'processing_cost_unit', e.target.value)}
+                        style={{ width: '100px', padding: '8px', border: '1px solid #ddd', borderRadius: '4px' }}
+                      >
+                        <option value="liter">$/L</option>
+                        <option value="kg">$/kg</option>
+                      </select>
+                      <input
+                        type="number"
+                        value={product.processing_cost_unit === 'kg' ? product.processing_cost_per_kg : product.processing_cost_per_liter}
+                        onChange={(e) => {
+                          const field = product.processing_cost_unit === 'kg' ? 'processing_cost_per_kg' : 'processing_cost_per_liter';
+                          handleProductChange(product.id, field, e.target.value);
+                        }}
+                        onFocus={handleInputFocus}
+                        step="0.01"
+                        style={{ flex: 1 }}
+                        placeholder={product.processing_cost_unit === 'liter' ? 'Ej: 0.50' : 'Ej: 1.20'}
+                      />
+                    </div>
+                    <small style={{ color: '#666', fontSize: '0.85em', display: 'block', marginTop: '5px' }}>
+                      {product.processing_cost_unit === 'liter' 
+                        ? 'Costo de procesamiento por litro de leche usado' 
+                        : 'Costo de procesamiento por kilogramo de producto producido'}
+                    </small>
                   </div>
 
-                  <div className="form-group">
-                    <label>{t('packagingCostPerKg')}</label>
-                    <input
-                      type="number"
-                      value={product.packaging_cost_per_kg}
-                      onChange={(e) => handleProductChange(product.id, 'packaging_cost_per_kg', e.target.value)}
-                      onFocus={handleInputFocus}
-                      step="0.01"
-                    />
+                  <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+                    <label>
+                      {t('packagingCost')} 
+                      <span style={{ 
+                        marginLeft: '8px', 
+                        padding: '2px 8px', 
+                        background: '#e8f5e9', 
+                        borderRadius: '4px', 
+                        fontSize: '0.85em',
+                        fontWeight: 'normal'
+                      }}>
+                        {product.packaging_cost_unit === 'liter' ? '($/L)' : '($/kg)'}
+                      </span>
+                    </label>
+                    <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                      <select
+                        value={product.packaging_cost_unit || 'kg'}
+                        onChange={(e) => handleProductChange(product.id, 'packaging_cost_unit', e.target.value)}
+                        style={{ width: '100px', padding: '8px', border: '1px solid #ddd', borderRadius: '4px' }}
+                      >
+                        <option value="liter">$/L</option>
+                        <option value="kg">$/kg</option>
+                      </select>
+                      <input
+                        type="number"
+                        value={product.packaging_cost_unit === 'liter' ? product.packaging_cost_per_liter : product.packaging_cost_per_kg}
+                        onChange={(e) => {
+                          const field = product.packaging_cost_unit === 'liter' ? 'packaging_cost_per_liter' : 'packaging_cost_per_kg';
+                          handleProductChange(product.id, field, e.target.value);
+                        }}
+                        onFocus={handleInputFocus}
+                        step="0.01"
+                        style={{ flex: 1 }}
+                        placeholder={product.packaging_cost_unit === 'liter' ? 'Ej: 0.15' : 'Ej: 0.30'}
+                      />
+                    </div>
+                    <small style={{ color: '#666', fontSize: '0.85em', display: 'block', marginTop: '5px' }}>
+                      {product.packaging_cost_unit === 'liter' 
+                        ? 'Costo de empaque por litro de producto producido' 
+                        : 'Costo de empaque por kilogramo de producto producido'}
+                    </small>
                   </div>
                 </div>
 
@@ -759,6 +857,11 @@ function Module2Transformation({ user }) {
                 <h4 style={{ marginTop: '25px', marginBottom: '15px', fontSize: '1em', color: '#555' }}>
                   {t('salesChannels')}
                 </h4>
+                <div style={{ marginBottom: '15px', padding: '10px', background: '#fff9e6', borderRadius: '6px', border: '1px solid #ffe066', fontSize: '0.9em' }}>
+                  <strong>📌 Nota:</strong> Estos canales aplican <strong>solo al producto transformado</strong> (queso, yogurt, etc.). 
+                  "Venta Directa" aquí significa venta directa del producto transformado al consumidor final (tienda/local propio/online), 
+                  <strong>NO</strong> venta de leche cruda (que se maneja en Módulo 1).
+                </div>
                 {(() => {
                   const totalChannelPct = parseFloat(product.sales_channel_direct_percentage || 0) + 
                                           parseFloat(product.sales_channel_distributors_percentage || 0) + 
@@ -868,7 +971,7 @@ function Module2Transformation({ user }) {
               <div className="card">
                 <h2>{t('productionCostBreakdown')}</h2>
                 {(() => {
-                  const litersPerKg = Number(transformationData.liters_per_kg_product) || 0;
+                  const totalLiters = (productionData.daily_production_liters || 0) * (productionData.production_days || 0) * (productionData.animals_count || 0);
                   
                   // Calculate total milk production cost per liter (sum of all costs from Module 1)
                   const feedCost = Number(productionData.feed_cost_per_liter) || 0;
@@ -878,17 +981,69 @@ function Module2Transformation({ user }) {
                   const otherCost = Number(productionData.other_costs_per_liter) || 0;
                   const totalMilkProductionCostPerLiter = feedCost + laborCost + healthCost + infrastructureCost + otherCost;
                   
-                  const processingCostPerLiter = Number(transformationData.processing_cost_per_liter) || 0;
-                  const packagingCostPerKg = Number(transformationData.packaging_cost_per_kg) || 0;
+                  // Calculate aggregated totals across all products
+                  let totalProductKg = 0;
+                  let totalProductLiters = 0;
+                  let totalProcessingCost = 0;
+                  let totalPackagingCost = 0;
+                  let totalMilkCost = 0;
                   
-                  // Calculate product production cost per kg:
-                  // (Total milk production cost per liter × liters per kg) + processing cost + packaging cost
-                  const milkCostPerKg = totalMilkProductionCostPerLiter * litersPerKg;
-                  const processingCostPerKg = processingCostPerLiter * litersPerKg;
-                  const totalCostPerKg = milkCostPerKg + processingCostPerKg + packagingCostPerKg;
+                  const productBreakdowns = products.map(product => {
+                    const distributionPct = parseFloat(product.distribution_percentage) || 0;
+                    const litersPerKg = parseFloat(product.liters_per_kg_product) || 1;
+                    
+                    const processingCostUnit = product.processing_cost_unit || 'liter';
+                    const packagingCostUnit = product.packaging_cost_unit || 'kg';
+                    const processingCostPerLiter = parseFloat(product.processing_cost_per_liter) || 0;
+                    const processingCostPerKg = parseFloat(product.processing_cost_per_kg) || 0;
+                    const packagingCostPerLiter = parseFloat(product.packaging_cost_per_liter) || 0;
+                    const packagingCostPerKg = parseFloat(product.packaging_cost_per_kg) || 0;
+                    
+                    const productLiters = totalLiters * (distributionPct / 100);
+                    const productKg = productLiters / litersPerKg;
+                    
+                    let productProcessingCost = 0;
+                    if (processingCostUnit === 'liter') {
+                      productProcessingCost = processingCostPerLiter * productLiters;
+                    } else if (processingCostUnit === 'kg') {
+                      productProcessingCost = processingCostPerKg * productKg;
+                    }
+                    
+                    let productPackagingCost = 0;
+                    if (packagingCostUnit === 'liter') {
+                      productPackagingCost = packagingCostPerLiter * productLiters;
+                    } else if (packagingCostUnit === 'kg') {
+                      productPackagingCost = packagingCostPerKg * productKg;
+                    }
+                    
+                    const productMilkCost = totalMilkProductionCostPerLiter * productLiters;
+                    const totalProductCost = productMilkCost + productProcessingCost + productPackagingCost;
+                    const costPerKg = productKg > 0 ? totalProductCost / productKg : 0;
+                    
+                    totalProductKg += productKg;
+                    totalProductLiters += productLiters;
+                    totalProcessingCost += productProcessingCost;
+                    totalPackagingCost += productPackagingCost;
+                    totalMilkCost += productMilkCost;
+                    
+                    return {
+                      product,
+                      productLiters,
+                      productKg,
+                      productMilkCost,
+                      productProcessingCost,
+                      productPackagingCost,
+                      totalProductCost,
+                      costPerKg,
+                    };
+                  });
+                  
+                  const totalCosts = totalMilkCost + totalProcessingCost + totalPackagingCost;
+                  const averageCostPerKg = totalProductKg > 0 ? totalCosts / totalProductKg : 0;
                   
                   return (
                     <div style={{ marginBottom: '20px' }}>
+                      <h3 style={{ fontSize: '1.1em', marginBottom: '15px' }}>Resumen Consolidado</h3>
                       <table className="table">
                         <tbody>
                           <tr>
@@ -896,25 +1051,69 @@ function Module2Transformation({ user }) {
                             <td>${totalMilkProductionCostPerLiter.toFixed(2)} ({t('inheritedFromModule1')})</td>
                           </tr>
                           <tr>
-                            <td><strong>{t('milkCostPerKg')}</strong></td>
-                            <td>${milkCostPerKg.toFixed(2)} ({litersPerKg.toFixed(2)} L × ${totalMilkProductionCostPerLiter.toFixed(2)}/L)</td>
+                            <td><strong>Total litros transformados:</strong></td>
+                            <td>{totalProductLiters.toLocaleString(undefined, { maximumFractionDigits: 2 })} L</td>
                           </tr>
                           <tr>
-                            <td><strong>{t('processingCostPerKg')}</strong></td>
-                            <td>${processingCostPerKg.toFixed(2)} ({litersPerKg.toFixed(2)} L × ${processingCostPerLiter.toFixed(2)}/L)</td>
+                            <td><strong>Total kg producidos:</strong></td>
+                            <td>{totalProductKg.toLocaleString(undefined, { maximumFractionDigits: 2 })} kg</td>
                           </tr>
-                          {packagingCostPerKg > 0 && (
-                            <tr>
-                              <td><strong>{t('packagingCostPerKg')}</strong></td>
-                              <td>${packagingCostPerKg.toFixed(2)}</td>
-                            </tr>
-                          )}
+                          <tr>
+                            <td><strong>Costo total de leche:</strong></td>
+                            <td>${totalMilkCost.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
+                          </tr>
+                          <tr>
+                            <td><strong>Costo total de procesamiento:</strong></td>
+                            <td>${totalProcessingCost.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
+                          </tr>
+                          <tr>
+                            <td><strong>Costo total de empaque:</strong></td>
+                            <td>${totalPackagingCost.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
+                          </tr>
                           <tr style={{ borderTop: '2px solid #333' }}>
-                            <td><strong>{t('totalProductionCostPerKg')}</strong></td>
-                            <td><strong>${totalCostPerKg.toFixed(2)}</strong></td>
+                            <td><strong>Costo total producción:</strong></td>
+                            <td><strong>${totalCosts.toLocaleString(undefined, { maximumFractionDigits: 2 })}</strong></td>
+                          </tr>
+                          <tr>
+                            <td><strong>Costo promedio por kg:</strong></td>
+                            <td><strong>${averageCostPerKg.toFixed(2)} / kg</strong></td>
                           </tr>
                         </tbody>
                       </table>
+                      
+                      {products.length > 1 && (
+                        <>
+                          <h3 style={{ fontSize: '1.1em', marginTop: '25px', marginBottom: '15px' }}>Desglose por Producto</h3>
+                          <table className="table">
+                            <thead>
+                              <tr>
+                                <th>Producto</th>
+                                <th>Litros</th>
+                                <th>Kg</th>
+                                <th>Costo Leche</th>
+                                <th>Costo Proc.</th>
+                                <th>Costo Emp.</th>
+                                <th>Total</th>
+                                <th>Costo/kg</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {productBreakdowns.map((bd, idx) => (
+                                <tr key={idx}>
+                                  <td>{bd.product.product_type_custom || t(`productTypes.${bd.product.product_type}`) || bd.product.product_type}</td>
+                                  <td>{bd.productLiters.toLocaleString(undefined, { maximumFractionDigits: 2 })} L</td>
+                                  <td>{bd.productKg.toLocaleString(undefined, { maximumFractionDigits: 2 })} kg</td>
+                                  <td>${bd.productMilkCost.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
+                                  <td>${bd.productProcessingCost.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
+                                  <td>${bd.productPackagingCost.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
+                                  <td>${bd.totalProductCost.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
+                                  <td><strong>${bd.costPerKg.toFixed(2)}</strong></td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </>
+                      )}
                     </div>
                   );
                 })()}
@@ -924,7 +1123,7 @@ function Module2Transformation({ user }) {
               <div className="card">
                 <h2>{t('channelMargins')}</h2>
                 {(() => {
-                  const litersPerKg = Number(transformationData.liters_per_kg_product) || 0;
+                  const totalLiters = (productionData.daily_production_liters || 0) * (productionData.production_days || 0) * (productionData.animals_count || 0);
                   
                   // Calculate total milk production cost per liter (inherited from Module 1)
                   const feedCost = Number(productionData.feed_cost_per_liter) || 0;
@@ -934,29 +1133,99 @@ function Module2Transformation({ user }) {
                   const otherCost = Number(productionData.other_costs_per_liter) || 0;
                   const totalMilkProductionCostPerLiter = feedCost + laborCost + healthCost + infrastructureCost + otherCost;
                   
-                  const processingCostPerLiter = Number(transformationData.processing_cost_per_liter) || 0;
-                  const packagingCostPerKg = Number(transformationData.packaging_cost_per_kg) || 0;
+                  // Aggregate channel data across all products
+                  const channelData = {
+                    direct: { kg: 0, revenue: 0, percentage: 0 },
+                    distributors: { kg: 0, revenue: 0, percentage: 0 },
+                    third: { kg: 0, revenue: 0, percentage: 0 },
+                  };
                   
-                  // Calculate product production cost per kg
-                  const milkCostPerKg = totalMilkProductionCostPerLiter * litersPerKg;
-                  const processingCostPerKg = processingCostPerLiter * litersPerKg;
-                  const totalCostPerKg = milkCostPerKg + processingCostPerKg + packagingCostPerKg;
+                  let totalProductKg = 0;
+                  let totalCosts = 0;
+                  
+                  products.forEach(product => {
+                    const distributionPct = parseFloat(product.distribution_percentage) || 0;
+                    const litersPerKg = parseFloat(product.liters_per_kg_product) || 1;
+                    
+                    const processingCostUnit = product.processing_cost_unit || 'liter';
+                    const packagingCostUnit = product.packaging_cost_unit || 'kg';
+                    const processingCostPerLiter = parseFloat(product.processing_cost_per_liter) || 0;
+                    const processingCostPerKg = parseFloat(product.processing_cost_per_kg) || 0;
+                    const packagingCostPerLiter = parseFloat(product.packaging_cost_per_liter) || 0;
+                    const packagingCostPerKg = parseFloat(product.packaging_cost_per_kg) || 0;
+                    
+                    const productLiters = totalLiters * (distributionPct / 100);
+                    const productKg = productLiters / litersPerKg;
+                    
+                    let productProcessingCost = 0;
+                    if (processingCostUnit === 'liter') {
+                      productProcessingCost = processingCostPerLiter * productLiters;
+                    } else if (processingCostUnit === 'kg') {
+                      productProcessingCost = processingCostPerKg * productKg;
+                    }
+                    
+                    let productPackagingCost = 0;
+                    if (packagingCostUnit === 'liter') {
+                      productPackagingCost = packagingCostPerLiter * productLiters;
+                    } else if (packagingCostUnit === 'kg') {
+                      productPackagingCost = packagingCostPerKg * productKg;
+                    }
+                    
+                    const productMilkCost = totalMilkProductionCostPerLiter * productLiters;
+                    const productTotalCost = productMilkCost + productProcessingCost + productPackagingCost;
+                    
+                    totalProductKg += productKg;
+                    totalCosts += productTotalCost;
+                    
+                    // Distribute product across channels
+                    const directPct = parseFloat(product.sales_channel_direct_percentage) || 0;
+                    const distPct = parseFloat(product.sales_channel_distributors_percentage) || 0;
+                    const thirdPct = parseFloat(product.sales_channel_third_percentage) || 0;
+                    
+                    const directKg = productKg * (directPct / 100);
+                    const distKg = productKg * (distPct / 100);
+                    const thirdKg = productKg * (thirdPct / 100);
+                    
+                    const directPrice = parseFloat(product.direct_sale_price_per_kg) || 0;
+                    const distPrice = parseFloat(product.distributors_price_per_kg) || 0;
+                    const thirdPrice = parseFloat(product.third_channel_price_per_kg) || 0;
+                    
+                    channelData.direct.kg += directKg;
+                    channelData.direct.revenue += directPrice * directKg;
+                    channelData.distributors.kg += distKg;
+                    channelData.distributors.revenue += distPrice * distKg;
+                    channelData.third.kg += thirdKg;
+                    channelData.third.revenue += thirdPrice * thirdKg;
+                  });
+                  
+                  // Calculate weighted average prices and percentages
+                  channelData.direct.percentage = totalProductKg > 0 ? (channelData.direct.kg / totalProductKg) * 100 : 0;
+                  channelData.distributors.percentage = totalProductKg > 0 ? (channelData.distributors.kg / totalProductKg) * 100 : 0;
+                  channelData.third.percentage = totalProductKg > 0 ? (channelData.third.kg / totalProductKg) * 100 : 0;
+                  
+                  const averageCostPerKg = totalProductKg > 0 ? totalCosts / totalProductKg : 0;
                   
                   const channels = [
                     {
                       name: t('salesChannelDirect'),
-                      percentage: Number(transformationData.sales_channel_direct_percentage) || 0,
-                      price: Number(transformationData.direct_sale_price_per_kg) || 0
+                      percentage: channelData.direct.percentage,
+                      price: channelData.direct.kg > 0 ? channelData.direct.revenue / channelData.direct.kg : 0,
+                      kg: channelData.direct.kg,
+                      revenue: channelData.direct.revenue,
                     },
                     {
                       name: t('salesChannelDistributors'),
-                      percentage: Number(transformationData.sales_channel_distributors_percentage) || 0,
-                      price: Number(transformationData.distributors_price_per_kg) || 0
+                      percentage: channelData.distributors.percentage,
+                      price: channelData.distributors.kg > 0 ? channelData.distributors.revenue / channelData.distributors.kg : 0,
+                      kg: channelData.distributors.kg,
+                      revenue: channelData.distributors.revenue,
                     },
                     {
                       name: t('salesChannelThird'),
-                      percentage: Number(transformationData.sales_channel_third_percentage) || 0,
-                      price: Number(transformationData.third_channel_price_per_kg) || 0
+                      percentage: channelData.third.percentage,
+                      price: channelData.third.kg > 0 ? channelData.third.revenue / channelData.third.kg : 0,
+                      kg: channelData.third.kg,
+                      revenue: channelData.third.revenue,
                     }
                   ];
                   
@@ -966,31 +1235,45 @@ function Module2Transformation({ user }) {
                         <tr>
                           <th>{t('concept')}</th>
                           <th>% {t('salesChannels')}</th>
-                          <th>{t('salesPrice')}</th>
-                          <th>{t('productionCost')}</th>
+                          <th>Kg/L</th>
+                          <th>{t('salesPrice')} (promedio)</th>
+                          <th>Costo (promedio)</th>
                           <th>{t('marginPerKg')}</th>
                           <th>{t('marginPercent')}</th>
+                          <th>Ingreso Total</th>
                         </tr>
                       </thead>
                       <tbody>
                         {channels.map((channel, idx) => {
-                          const margin = channel.price - totalCostPerKg;
+                          const margin = channel.price - averageCostPerKg;
                           const marginPercent = channel.price > 0 ? (margin / channel.price) * 100 : 0;
+                          const totalMargin = channel.revenue - (averageCostPerKg * channel.kg);
                           return (
                             <tr key={idx} style={{ opacity: channel.percentage === 0 ? 0.5 : 1 }}>
                               <td><strong>{channel.name}</strong></td>
                               <td>{channel.percentage.toFixed(1)}%</td>
-                              <td>${channel.price.toFixed(2)}</td>
-                              <td>${totalCostPerKg.toFixed(2)}</td>
+                              <td>{channel.kg.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
+                              <td>${channel.price > 0 ? channel.price.toFixed(2) : '0.00'}</td>
+                              <td>${averageCostPerKg.toFixed(2)}</td>
                               <td style={{ color: margin >= 0 ? 'green' : 'red', fontWeight: 'bold' }}>
                                 ${margin.toFixed(2)}
                               </td>
                               <td style={{ color: marginPercent >= 0 ? 'green' : 'red', fontWeight: 'bold' }}>
                                 {marginPercent.toFixed(1)}%
                               </td>
+                              <td>${channel.revenue.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
                             </tr>
                           );
                         })}
+                        <tr style={{ borderTop: '2px solid #333', fontWeight: 'bold' }}>
+                          <td colSpan="2"><strong>Total</strong></td>
+                          <td>{totalProductKg.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
+                          <td>-</td>
+                          <td>${averageCostPerKg.toFixed(2)}</td>
+                          <td>-</td>
+                          <td>-</td>
+                          <td>${(channels[0].revenue + channels[1].revenue + channels[2].revenue).toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
+                        </tr>
                       </tbody>
                     </table>
                   );
@@ -1004,8 +1287,9 @@ function Module2Transformation({ user }) {
                     📊 {t('note')}: {t('whatAreWeComparing')}
                   </p>
                   <ul style={{ margin: 0, paddingLeft: '20px', fontSize: '0.9em', color: '#666' }}>
-                    <li><strong>{t('directSale')}:</strong> {t('directSaleExplanation')}</li>
-                    <li><strong>{t('transformation')}:</strong> {t('transformationExplanation')}</li>
+                    <li><strong>Venta de Leche Cruda (Módulo 1):</strong> Leche vendida directamente sin transformar (puerta de corral o a industria/acopiador).</li>
+                    <li><strong>Transformación (Módulo 2):</strong> Leche convertida en productos (queso, yogurt, etc.) y vendida a través de canales (venta directa al consumidor, distribuidores, tercer canal).</li>
+                    <li><strong>Nota importante:</strong> "Venta Directa" dentro del Módulo 2 se refiere a venta directa del <strong>producto transformado</strong> al consumidor final, NO a venta de leche cruda.</li>
                     <li><strong>{t('assumptions')}:</strong> {t('assumptionsExplanation')}</li>
                     <li><strong>{t('costsIncluded')}:</strong> {t('costsIncludedExplanation')}</li>
                   </ul>
