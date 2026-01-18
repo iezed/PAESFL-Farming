@@ -68,6 +68,9 @@ export const translations = {
     email: 'Email',
     password: 'Password',
     name: 'Name',
+    lastName: 'Last Name',
+    country: 'Country',
+    selectCountry: 'Select Country',
     loginError: 'Login error',
     registerError: 'Registration error',
     alreadyHaveAccount: 'Already have an account? Login',
@@ -105,7 +108,7 @@ export const translations = {
     
     // Module Types
     moduleTypes: {
-      milk_sale: 'Production and Milk Sale',
+      milk_sale: 'Production and Raw Milk Sale',
       transformation: 'Dairy Transformation',
       lactation: 'Lactation and Productive Life',
       yield: 'Yield/Conversion',
@@ -142,7 +145,7 @@ export const translations = {
     // Module 1 - Production
     module1Title: 'Module 1: Production and Raw Milk Sale',
     productionData: 'Production Data (herd average)',
-    dailyProduction: 'Daily Production (liters)',
+    dailyProduction: 'Daily Production per Goat (liters)',
     productionDays: 'Production Days (herd average in lactation)',
     animalsCount: 'Number of Goats in Lactation',
     feedCost: 'Feed Cost (per liter)',
@@ -217,9 +220,10 @@ export const translations = {
       yogurt: 'Yogurt',
       otro: 'Other (includes butter, etc.)'
     },
-    comparison: 'Comparison: Direct Sale vs Transformation',
+    comparison: 'Comparison: Raw Milk Sale vs Transformation',
     concept: 'Concept',
-    directSale: 'Direct Sale',
+    directSale: 'Raw Milk Sale',
+    rawMilkSale: 'Raw Milk Sale',
     transformation: 'Transformation',
     income: 'Income',
     margin: 'Margin',
@@ -448,6 +452,9 @@ export const translations = {
     email: 'Email',
     password: 'Contraseña',
     name: 'Nombre',
+    lastName: 'Apellido',
+    country: 'País',
+    selectCountry: 'Seleccionar País',
     loginError: 'Error al iniciar sesión',
     registerError: 'Error al registrarse',
     alreadyHaveAccount: '¿Ya tienes cuenta? Inicia sesión',
@@ -485,7 +492,7 @@ export const translations = {
     
     // Module Types
     moduleTypes: {
-      milk_sale: 'Producción y Venta de Leche',
+      milk_sale: 'Producción y Venta de Leche Cruda',
       transformation: 'Transformación Láctea',
       lactation: 'Lactancia y Vida Productiva',
       yield: 'Rendimiento/Conversión',
@@ -522,7 +529,7 @@ export const translations = {
     // Module 1 - Production
     module1Title: 'Módulo 1: Producción y Venta de Leche Cruda',
     productionData: 'Datos de Producción (promedio del rebaño)',
-    dailyProduction: 'Producción Diaria (litros)',
+    dailyProduction: 'Producción Diaria por Cabra (litros)',
     productionDays: 'Días de Producción (promedio del rebaño en lactancia)',
     animalsCount: 'Número de Cabras en Lactancia',
     feedCost: 'Costo de Alimentación (por litro)',
@@ -597,9 +604,10 @@ export const translations = {
       yogurt: 'Yogurt',
       otro: 'Otro (incluye mantequilla, etc.)'
     },
-    comparison: 'Comparación: Venta Directa vs Transformación',
+    comparison: 'Comparación: Venta de Leche Cruda vs Transformación',
     concept: 'Concepto',
-    directSale: 'Venta Directa',
+    directSale: 'Venta de Leche Cruda',
+    rawMilkSale: 'Venta de Leche Cruda',
     transformation: 'Transformación',
     income: 'Ingresos',
     margin: 'Margen',

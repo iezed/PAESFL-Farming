@@ -79,6 +79,17 @@ function Module2Transformation({ user }) {
     initialize();
   }, [scenarioId]);
 
+  // Auto-calculate results when data is loaded and we have products
+  useEffect(() => {
+    if (selectedScenario && products.length > 0 && productionData.daily_production_liters > 0) {
+      // Only calculate if we don't have results yet
+      if (!results) {
+        handleCalculate();
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedScenario, products, productionData.daily_production_liters]);
+
   const loadScenarios = async () => {
     try {
       const response = await api.get('/scenarios?type=transformation');
@@ -525,7 +536,7 @@ function Module2Transformation({ user }) {
 
   const comparisonData = results ? [
     { 
-      name: t('directSale'), 
+      name: t('rawMilkSale'), 
       [t('income')]: Number(results.milk_revenue) || 0, 
       [t('totalCosts')]: Number(results.milk_revenue - results.milk_margin) || 0, 
       [t('margin')]: Number(results.milk_margin) || 0 
@@ -820,23 +831,36 @@ function Module2Transformation({ user }) {
                         <label style={{ fontSize: '0.85em', color: '#666', fontWeight: '500' }}>
                           Costo {product.processing_cost_unit === 'liter' ? 'por litro' : 'por kg'}:
                         </label>
-                        <input
-                          type="number"
-                          value={product.processing_cost_unit === 'kg' ? product.processing_cost_per_kg : product.processing_cost_per_liter}
-                          onChange={(e) => {
-                            const field = product.processing_cost_unit === 'kg' ? 'processing_cost_per_kg' : 'processing_cost_per_liter';
-                            handleProductChange(product.id, field, e.target.value);
-                          }}
-                          onFocus={handleInputFocus}
-                          step="0.01"
-                          placeholder={product.processing_cost_unit === 'liter' ? t('processingCostPlaceholderLiter') : t('processingCostPlaceholderKg')}
-                          style={{ 
-                            padding: '8px 12px', 
-                            border: '2px solid #ddd', 
-                            borderRadius: '6px',
-                            fontSize: '0.95em'
-                          }}
-                        />
+                        <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                          <input
+                            type="number"
+                            value={product.processing_cost_unit === 'kg' ? product.processing_cost_per_kg : product.processing_cost_per_liter}
+                            onChange={(e) => {
+                              const field = product.processing_cost_unit === 'kg' ? 'processing_cost_per_kg' : 'processing_cost_per_liter';
+                              handleProductChange(product.id, field, e.target.value);
+                            }}
+                            onFocus={handleInputFocus}
+                            step="0.01"
+                            placeholder={product.processing_cost_unit === 'liter' ? t('processingCostPlaceholderLiter') : t('processingCostPlaceholderKg')}
+                            style={{ 
+                              padding: '8px 45px 8px 12px', 
+                              border: '2px solid #ddd', 
+                              borderRadius: '6px',
+                              fontSize: '0.95em',
+                              width: '100%'
+                            }}
+                          />
+                          <span style={{ 
+                            position: 'absolute', 
+                            right: '12px', 
+                            color: '#666', 
+                            fontWeight: '600',
+                            fontSize: '0.9em',
+                            pointerEvents: 'none'
+                          }}>
+                            {product.processing_cost_unit === 'liter' ? '$/L' : '$/kg'}
+                          </span>
+                        </div>
                       </div>
                     </div>
                     <div style={{ 
@@ -884,23 +908,36 @@ function Module2Transformation({ user }) {
                         <label style={{ fontSize: '0.85em', color: '#666', fontWeight: '500' }}>
                           Costo {product.packaging_cost_unit === 'liter' ? 'por litro' : 'por kg'}:
                         </label>
-                        <input
-                          type="number"
-                          value={product.packaging_cost_unit === 'liter' ? product.packaging_cost_per_liter : product.packaging_cost_per_kg}
-                          onChange={(e) => {
-                            const field = product.packaging_cost_unit === 'liter' ? 'packaging_cost_per_liter' : 'packaging_cost_per_kg';
-                            handleProductChange(product.id, field, e.target.value);
-                          }}
-                          onFocus={handleInputFocus}
-                          step="0.01"
-                          placeholder={product.packaging_cost_unit === 'liter' ? t('packagingCostPlaceholderLiter') : t('packagingCostPlaceholderKg')}
-                          style={{ 
-                            padding: '8px 12px', 
-                            border: '2px solid #ddd', 
-                            borderRadius: '6px',
-                            fontSize: '0.95em'
-                          }}
-                        />
+                        <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                          <input
+                            type="number"
+                            value={product.packaging_cost_unit === 'liter' ? product.packaging_cost_per_liter : product.packaging_cost_per_kg}
+                            onChange={(e) => {
+                              const field = product.packaging_cost_unit === 'liter' ? 'packaging_cost_per_liter' : 'packaging_cost_per_kg';
+                              handleProductChange(product.id, field, e.target.value);
+                            }}
+                            onFocus={handleInputFocus}
+                            step="0.01"
+                            placeholder={product.packaging_cost_unit === 'liter' ? t('packagingCostPlaceholderLiter') : t('packagingCostPlaceholderKg')}
+                            style={{ 
+                              padding: '8px 45px 8px 12px', 
+                              border: '2px solid #ddd', 
+                              borderRadius: '6px',
+                              fontSize: '0.95em',
+                              width: '100%'
+                            }}
+                          />
+                          <span style={{ 
+                            position: 'absolute', 
+                            right: '12px', 
+                            color: '#666', 
+                            fontWeight: '600',
+                            fontSize: '0.9em',
+                            pointerEvents: 'none'
+                          }}>
+                            {product.packaging_cost_unit === 'liter' ? '$/L' : '$/kg'}
+                          </span>
+                        </div>
                       </div>
                     </div>
                     <div style={{ 
@@ -1382,7 +1419,7 @@ function Module2Transformation({ user }) {
                   <thead>
                     <tr>
                       <th>{t('concept')}</th>
-                      <th>{t('directSale')}</th>
+                      <th>{t('rawMilkSale')}</th>
                       <th>{t('transformation')}</th>
                     </tr>
                   </thead>
