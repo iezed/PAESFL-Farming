@@ -29,6 +29,7 @@ function Module1Production({ user }) {
   const [loading, setLoading] = useState(false);
   const [alertModal, setAlertModal] = useState({ isOpen: false, message: '', type: 'success' });
   const [viewPeriod, setViewPeriod] = useState('lactation'); // 'daily', 'monthly', 'lactation'
+  const [marginViewMode, setMarginViewMode] = useState('dollars'); // 'dollars' or 'percent' for charts
 
   useEffect(() => {
     const initialize = async () => {
@@ -91,6 +92,10 @@ function Module1Production({ user }) {
           }
         });
         setResults(normalizedResults);
+        // Show notification that results were auto-loaded
+        if (normalizedResults.total_revenue || normalizedResults.gross_margin) {
+          // Silently load results - user will see them in the UI
+        }
       }
     } catch (error) {
       console.error('Error loading scenario:', error);
@@ -423,19 +428,26 @@ function Module1Production({ user }) {
           {results && (
             <>
               <div className="card">
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '10px' }}>
                   <h2 style={{ margin: 0 }}>{t('results')}</h2>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <label style={{ fontWeight: 'bold' }}>{t('viewPeriod')}:</label>
-                    <select 
-                      value={viewPeriod} 
-                      onChange={(e) => setViewPeriod(e.target.value)}
-                      style={{ padding: '8px 12px', borderRadius: '4px', border: '1px solid #ccc' }}
-                    >
-                      <option value="daily">{t('daily')}</option>
-                      <option value="monthly">{t('monthly')}</option>
-                      <option value="lactation">{t('perLactation')}</option>
-                    </select>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                    {selectedScenario?.results && (
+                      <div style={{ padding: '6px 12px', background: '#e8f5e9', borderRadius: '4px', fontSize: '0.85em', color: '#2e7d32' }}>
+                        ✓ {t('autoLoadedResults')}
+                      </div>
+                    )}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <label style={{ fontWeight: 'bold' }}>{t('viewPeriod')}:</label>
+                      <select 
+                        value={viewPeriod} 
+                        onChange={(e) => setViewPeriod(e.target.value)}
+                        style={{ padding: '8px 12px', borderRadius: '4px', border: '1px solid #ccc' }}
+                      >
+                        <option value="daily">{t('daily')}</option>
+                        <option value="monthly">{t('monthly')}</option>
+                        <option value="lactation">{t('perLactation')}</option>
+                      </select>
+                    </div>
                   </div>
                 </div>
                 {(() => {
@@ -485,20 +497,53 @@ function Module1Production({ user }) {
               </div>
 
               <div className="card">
-                <h2>{t('visualization')}</h2>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                  <h2 style={{ margin: 0 }}>{t('visualization')}</h2>
+                  <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                    <label style={{ fontWeight: 'bold', fontSize: '0.9em' }}>{t('marginViewMode')}:</label>
+                    <select
+                      value={marginViewMode}
+                      onChange={(e) => setMarginViewMode(e.target.value)}
+                      style={{ padding: '8px 12px', borderRadius: '4px', border: '1px solid #ccc', fontSize: '0.9em' }}
+                    >
+                      <option value="dollars">{t('viewInDollars')}</option>
+                      <option value="percent">{t('viewInPercent')}</option>
+                    </select>
+                  </div>
+                </div>
                 <h3 style={{ marginBottom: '15px' }}>{t('income')} vs {t('totalCosts')} vs {t('grossMargin')}</h3>
-                {chartData.length > 0 ? (
-                  <ResponsiveContainer width="100%" height={300}>
-                    <BarChart data={chartData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" />
-                    <YAxis />
-                    <Tooltip formatter={(value) => `$${Number(value || 0).toLocaleString(undefined)}`} />
-                    <Legend />
-                    <Bar dataKey="value" fill="#8884d8" />
-                  </BarChart>
-                </ResponsiveContainer>
-                ) : (
+                {chartData.length > 0 ? (() => {
+                  // Transform data based on margin view mode
+                  const displayChartData = marginViewMode === 'percent' ? chartData.map(item => {
+                    const income = item.name === t('income') ? Number(item.value) : 0;
+                    const costs = item.name === t('totalCosts') ? Number(item.value) : 0;
+                    const margin = item.name === t('margin') ? Number(item.value) : 0;
+                    const totalRevenue = results?.total_revenue || 1;
+                    return {
+                      ...item,
+                      value: totalRevenue > 0 
+                        ? (item.name === t('income') ? 100 : item.name === t('totalCosts') ? (costs / totalRevenue) * 100 : (margin / totalRevenue) * 100)
+                        : 0
+                    };
+                  }) : chartData;
+                  
+                  return (
+                    <ResponsiveContainer width="100%" height={300}>
+                      <BarChart data={displayChartData}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="name" />
+                        <YAxis />
+                        <Tooltip formatter={(value) => 
+                          marginViewMode === 'percent' 
+                            ? `${Number(value || 0).toFixed(1)}%`
+                            : `$${Number(value || 0).toLocaleString(undefined)}`
+                        } />
+                        <Legend />
+                        <Bar dataKey="value" fill="#8884d8" />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  );
+                })() : (
                   <div style={{ padding: '40px', textAlign: 'center', background: '#f5f5f5', borderRadius: '8px' }}>
                     <p style={{ color: '#666', margin: 0 }}>{t('noDataToShow')}</p>
                   </div>

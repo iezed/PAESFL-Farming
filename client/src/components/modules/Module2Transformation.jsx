@@ -68,6 +68,8 @@ function Module2Transformation({ user }) {
   const [loading, setLoading] = useState(false);
   const [alertModal, setAlertModal] = useState({ isOpen: false, message: '', type: 'success' });
   const [chartViewType, setChartViewType] = useState('grouped'); // 'grouped', 'donut', 'stacked', 'waterfall'
+  const [expandedChannels, setExpandedChannels] = useState({}); // Track which channels have expanded product details
+  const [marginViewMode, setMarginViewMode] = useState('dollars'); // 'dollars' or 'percent' for charts
 
   useEffect(() => {
     const initialize = async () => {
@@ -80,9 +82,11 @@ function Module2Transformation({ user }) {
   }, [scenarioId]);
 
   // Auto-calculate results when data is loaded and we have products
+  // But only if results are not already loaded from saved scenario
   useEffect(() => {
     if (selectedScenario && products.length > 0 && productionData.daily_production_liters > 0) {
       // Only calculate if we don't have results yet
+      // Results should be loaded from scenario.results in loadScenario
       if (!results) {
         handleCalculate();
       }
@@ -207,7 +211,24 @@ function Module2Transformation({ user }) {
         });
       }
       if (scenario.results) {
-        setResults(scenario.results);
+        // Normalize all numeric values in results to ensure they are numbers
+        const normalizedResults = {};
+        Object.keys(scenario.results).forEach(key => {
+          const value = scenario.results[key];
+          if (typeof value === 'number') {
+            normalizedResults[key] = value;
+          } else if (typeof value === 'string') {
+            const numValue = parseFloat(value);
+            normalizedResults[key] = isNaN(numValue) ? 0 : numValue;
+          } else {
+            normalizedResults[key] = value;
+          }
+        });
+        setResults(normalizedResults);
+        // Show notification that results were auto-loaded
+        if (normalizedResults.product_revenue || normalizedResults.transformation_margin) {
+          // Silently load results - user will see them in the UI
+        }
       }
     } catch (error) {
       console.error('Error loading scenario:', error);
@@ -1067,6 +1088,16 @@ function Module2Transformation({ user }) {
 
           {results && (
             <>
+              {/* Results loaded indicator */}
+              {selectedScenario?.results && (
+                <div className="card" style={{ background: '#e8f5e9', border: '1px solid #4caf50', marginBottom: '20px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#2e7d32' }}>
+                    <span style={{ fontSize: '1.2em' }}>✓</span>
+                    <strong>{t('autoLoadedResults')}</strong>
+                  </div>
+                </div>
+              )}
+              
               {/* Cost Breakdown Section */}
               <div className="card">
                 <h2>{t('productionCostBreakdown')}</h2>
@@ -1311,8 +1342,74 @@ function Module2Transformation({ user }) {
                   
                   const averageCostPerKg = totalProductKg > 0 ? totalCosts / totalProductKg : 0;
                   
+                  // Calculate product details per channel
+                  const getProductDetailsPerChannel = (channelKey) => {
+                    return products.map(product => {
+                      const distributionPct = parseFloat(product.distribution_percentage) || 0;
+                      const litersPerKg = parseFloat(product.liters_per_kg_product) || 1;
+                      const productLiters = totalLiters * (distributionPct / 100);
+                      const productKg = productLiters / litersPerKg;
+                      
+                      const processingCostUnit = product.processing_cost_unit || 'liter';
+                      const packagingCostUnit = product.packaging_cost_unit || 'kg';
+                      const processingCostPerLiter = parseFloat(product.processing_cost_per_liter) || 0;
+                      const processingCostPerKg = parseFloat(product.processing_cost_per_kg) || 0;
+                      const packagingCostPerLiter = parseFloat(product.packaging_cost_per_liter) || 0;
+                      const packagingCostPerKg = parseFloat(product.packaging_cost_per_kg) || 0;
+                      
+                      let productProcessingCost = 0;
+                      if (processingCostUnit === 'liter') {
+                        productProcessingCost = processingCostPerLiter * productLiters;
+                      } else if (processingCostUnit === 'kg') {
+                        productProcessingCost = processingCostPerKg * productKg;
+                      }
+                      
+                      let productPackagingCost = 0;
+                      if (packagingCostUnit === 'liter') {
+                        productPackagingCost = packagingCostPerLiter * productLiters;
+                      } else if (packagingCostUnit === 'kg') {
+                        productPackagingCost = packagingCostPerKg * productKg;
+                      }
+                      
+                      const productMilkCost = totalMilkProductionCostPerLiter * productLiters;
+                      const productTotalCost = productMilkCost + productProcessingCost + productPackagingCost;
+                      const productCostPerKg = productKg > 0 ? productTotalCost / productKg : 0;
+                      
+                      const directPct = parseFloat(product.sales_channel_direct_percentage) || 0;
+                      const distPct = parseFloat(product.sales_channel_distributors_percentage) || 0;
+                      const thirdPct = parseFloat(product.sales_channel_third_percentage) || 0;
+                      
+                      let channelKg = 0;
+                      let channelPrice = 0;
+                      
+                      if (channelKey === 'direct') {
+                        channelKg = productKg * (directPct / 100);
+                        channelPrice = parseFloat(product.direct_sale_price_per_kg) || 0;
+                      } else if (channelKey === 'distributors') {
+                        channelKg = productKg * (distPct / 100);
+                        channelPrice = parseFloat(product.distributors_price_per_kg) || 0;
+                      } else if (channelKey === 'third') {
+                        channelKg = productKg * (thirdPct / 100);
+                        channelPrice = parseFloat(product.third_channel_price_per_kg) || 0;
+                      }
+                      
+                      const unitMargin = channelPrice - productCostPerKg;
+                      const unitMarginPercent = channelPrice > 0 ? (unitMargin / channelPrice) * 100 : 0;
+                      
+                      return {
+                        productName: product.product_type_custom || t(`productTypes.${product.product_type}`) || product.product_type,
+                        kg: channelKg,
+                        price: channelPrice,
+                        unitCost: productCostPerKg,
+                        unitMargin,
+                        unitMarginPercent,
+                      };
+                    }).filter(detail => detail.kg > 0); // Only show products that have kg in this channel
+                  };
+                  
                   const channels = [
                     {
+                      key: 'direct',
                       name: t('salesChannelDirect'),
                       percentage: channelData.direct.percentage,
                       price: channelData.direct.kg > 0 ? channelData.direct.revenue / channelData.direct.kg : 0,
@@ -1320,6 +1417,7 @@ function Module2Transformation({ user }) {
                       revenue: channelData.direct.revenue,
                     },
                     {
+                      key: 'distributors',
                       name: t('salesChannelDistributors'),
                       percentage: channelData.distributors.percentage,
                       price: channelData.distributors.kg > 0 ? channelData.distributors.revenue / channelData.distributors.kg : 0,
@@ -1327,6 +1425,7 @@ function Module2Transformation({ user }) {
                       revenue: channelData.distributors.revenue,
                     },
                     {
+                      key: 'third',
                       name: t('salesChannelThird'),
                       percentage: channelData.third.percentage,
                       price: channelData.third.kg > 0 ? channelData.third.revenue / channelData.third.kg : 0,
@@ -1336,67 +1435,153 @@ function Module2Transformation({ user }) {
                   ];
                   
                   return (
-                    <table className="table">
-                      <thead>
-                        <tr>
-                          <th>{t('concept')}</th>
-                          <th>% {t('salesChannels')}</th>
-                          <th>{t('kgL')}</th>
-                          <th>{t('salesPrice')} ({t('average')})</th>
-                          <th>
-                            {t('costAverage')}
-                            <span 
-                              title={t('costAverageTooltip')}
-                              style={{ 
-                                marginLeft: '5px', 
-                                cursor: 'help',
-                                fontSize: '0.9em',
-                                color: '#666',
-                                textDecoration: 'none',
-                                borderBottom: '1px dotted #666'
-                              }}
-                            >
-                              ℹ️
-                            </span>
-                          </th>
-                          <th>{t('marginPerKg')}</th>
-                          <th>{t('marginPercent')}</th>
-                          <th>{t('totalIncome')}</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {channels.map((channel, idx) => {
-                          const margin = channel.price - averageCostPerKg;
-                          const marginPercent = channel.price > 0 ? (margin / channel.price) * 100 : 0;
-                          const totalMargin = channel.revenue - (averageCostPerKg * channel.kg);
-                          return (
-                            <tr key={idx} style={{ opacity: channel.percentage === 0 ? 0.5 : 1 }}>
-                              <td><strong>{channel.name}</strong></td>
-                              <td>{channel.percentage.toFixed(1)}%</td>
-                              <td>{channel.kg.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
-                              <td>${channel.price > 0 ? channel.price.toFixed(2) : '0.00'}</td>
-                              <td>${averageCostPerKg.toFixed(2)}</td>
-                              <td style={{ color: margin >= 0 ? 'green' : 'red', fontWeight: 'bold' }}>
-                                ${margin.toFixed(2)}
-                              </td>
-                              <td style={{ color: marginPercent >= 0 ? 'green' : 'red', fontWeight: 'bold' }}>
-                                {marginPercent.toFixed(1)}%
-                              </td>
-                              <td>${channel.revenue.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
-                            </tr>
-                          );
-                        })}
-                        <tr style={{ borderTop: '2px solid #333', fontWeight: 'bold' }}>
-                          <td colSpan="2"><strong>{t('total')}</strong></td>
-                          <td>{totalProductKg.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
-                          <td>-</td>
-                          <td>${averageCostPerKg.toFixed(2)}</td>
-                          <td>-</td>
-                          <td>-</td>
-                          <td>${(channels[0].revenue + channels[1].revenue + channels[2].revenue).toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
-                        </tr>
-                      </tbody>
-                    </table>
+                    <>
+                      <div style={{ marginBottom: '15px', padding: '12px', background: '#fff9e6', borderRadius: '6px', border: '1px solid #ffe066', fontSize: '0.9em' }}>
+                        <strong>📌 {t('note')}:</strong> {t('priceWeightedAverageNote')}
+                      </div>
+                      <table className="table">
+                        <thead>
+                          <tr>
+                            <th style={{ width: '30px' }}></th>
+                            <th>{t('concept')}</th>
+                            <th>% {t('salesChannels')}</th>
+                            <th>{t('kgL')}</th>
+                            <th>{t('salesPrice')} <small>({t('weightedAverageMix')})</small></th>
+                            <th>
+                              {t('costAverage')}
+                              <span 
+                                title={t('costAverageTooltip')}
+                                style={{ 
+                                  marginLeft: '5px', 
+                                  cursor: 'help',
+                                  fontSize: '0.9em',
+                                  color: '#666',
+                                  textDecoration: 'none',
+                                  borderBottom: '1px dotted #666'
+                                }}
+                              >
+                                ℹ️
+                              </span>
+                            </th>
+                            <th>{t('marginPerKg')}</th>
+                            <th>{t('marginPercent')}</th>
+                            <th>{t('totalIncome')}</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {channels.map((channel, idx) => {
+                            const margin = channel.price - averageCostPerKg;
+                            const marginPercent = channel.price > 0 ? (margin / channel.price) * 100 : 0;
+                            const totalMargin = channel.revenue - (averageCostPerKg * channel.kg);
+                            const isExpanded = expandedChannels[channel.key];
+                            const productDetails = getProductDetailsPerChannel(channel.key);
+                            
+                            return (
+                              <>
+                                <tr key={idx} style={{ opacity: channel.percentage === 0 ? 0.5 : 1 }}>
+                                  <td style={{ cursor: 'pointer', textAlign: 'center' }}>
+                                    {productDetails.length > 0 && (
+                                      <button
+                                        onClick={() => setExpandedChannels(prev => ({
+                                          ...prev,
+                                          [channel.key]: !prev[channel.key]
+                                        }))}
+                                        style={{
+                                          background: 'none',
+                                          border: 'none',
+                                          fontSize: '1.2em',
+                                          cursor: 'pointer',
+                                          padding: '0 5px'
+                                        }}
+                                      >
+                                        {isExpanded ? '▼' : '▶'}
+                                      </button>
+                                    )}
+                                  </td>
+                                  <td><strong>{channel.name}</strong></td>
+                                  <td>{channel.percentage.toFixed(1)}%</td>
+                                  <td>{channel.kg.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
+                                  <td>${channel.price > 0 ? channel.price.toFixed(2) : '0.00'}</td>
+                                  <td>${averageCostPerKg.toFixed(2)}</td>
+                                  <td style={{ color: margin >= 0 ? 'green' : 'red', fontWeight: 'bold' }}>
+                                    ${margin.toFixed(2)}
+                                  </td>
+                                  <td style={{ color: marginPercent >= 0 ? 'green' : 'red', fontWeight: 'bold' }}>
+                                    {marginPercent.toFixed(1)}%
+                                  </td>
+                                  <td>${channel.revenue.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
+                                </tr>
+                                {isExpanded && productDetails.length > 0 && (
+                                  <tr key={`${idx}-details`}>
+                                    <td colSpan="9" style={{ padding: '15px', background: '#f9f9f9' }}>
+                                      <div style={{ marginLeft: '30px' }}>
+                                        <h4 style={{ marginTop: 0, marginBottom: '10px', fontSize: '1em' }}>
+                                          {t('productDetailInChannel')}
+                                        </h4>
+                                        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                                          <thead>
+                                            <tr style={{ borderBottom: '2px solid #ddd' }}>
+                                              <th style={{ padding: '8px', textAlign: 'left' }}>{t('product')}</th>
+                                              <th style={{ padding: '8px', textAlign: 'right' }}>Kg</th>
+                                              <th style={{ padding: '8px', textAlign: 'right' }}>{t('salesPrice')}</th>
+                                              <th style={{ padding: '8px', textAlign: 'right' }}>{t('unitCost')}</th>
+                                              <th style={{ padding: '8px', textAlign: 'right' }}>{t('unitMargin')}</th>
+                                              <th style={{ padding: '8px', textAlign: 'right' }}>{t('marginPercent')}</th>
+                                            </tr>
+                                          </thead>
+                                          <tbody>
+                                            {productDetails.map((detail, detailIdx) => (
+                                              <tr key={detailIdx} style={{ borderBottom: '1px solid #eee' }}>
+                                                <td style={{ padding: '8px' }}>{detail.productName}</td>
+                                                <td style={{ padding: '8px', textAlign: 'right' }}>
+                                                  {detail.kg.toLocaleString(undefined, { maximumFractionDigits: 2 })}
+                                                </td>
+                                                <td style={{ padding: '8px', textAlign: 'right' }}>
+                                                  ${detail.price.toFixed(2)}
+                                                </td>
+                                                <td style={{ padding: '8px', textAlign: 'right' }}>
+                                                  ${detail.unitCost.toFixed(2)}
+                                                </td>
+                                                <td style={{ 
+                                                  padding: '8px', 
+                                                  textAlign: 'right',
+                                                  color: detail.unitMargin >= 0 ? 'green' : 'red',
+                                                  fontWeight: 'bold'
+                                                }}>
+                                                  ${detail.unitMargin.toFixed(2)}
+                                                </td>
+                                                <td style={{ 
+                                                  padding: '8px', 
+                                                  textAlign: 'right',
+                                                  color: detail.unitMarginPercent >= 0 ? 'green' : 'red',
+                                                  fontWeight: 'bold'
+                                                }}>
+                                                  {detail.unitMarginPercent.toFixed(1)}%
+                                                </td>
+                                              </tr>
+                                            ))}
+                                          </tbody>
+                                        </table>
+                                      </div>
+                                    </td>
+                                  </tr>
+                                )}
+                              </>
+                            );
+                          })}
+                          <tr style={{ borderTop: '2px solid #333', fontWeight: 'bold' }}>
+                            <td colSpan="2"><strong>{t('total')}</strong></td>
+                            <td>{totalProductKg.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
+                            <td>-</td>
+                            <td>${averageCostPerKg.toFixed(2)}</td>
+                            <td>-</td>
+                            <td>-</td>
+                            <td>-</td>
+                            <td>${(channels[0].revenue + channels[1].revenue + channels[2].revenue).toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </>
                   );
                 })()}
               </div>
@@ -1446,35 +1631,65 @@ function Module2Transformation({ user }) {
               </div>
 
               <div className="card">
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '10px' }}>
                   <h2 style={{ margin: 0 }}>{t('visualization')}</h2>
-                  <select
-                    value={chartViewType}
-                    onChange={(e) => setChartViewType(e.target.value)}
-                    style={{ padding: '8px 12px', borderRadius: '4px', border: '1px solid #ccc', fontSize: '0.9em' }}
-                  >
-                    <option value="grouped">{t('chartViewGrouped')}</option>
-                    <option value="donut">{t('chartViewDonut')}</option>
-                    <option value="stacked">{t('chartViewStacked')}</option>
-                    <option value="waterfall">{t('chartViewWaterfall')}</option>
-                  </select>
+                  <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                    <label style={{ fontWeight: 'bold', fontSize: '0.9em' }}>{t('marginViewMode')}:</label>
+                    <select
+                      value={marginViewMode}
+                      onChange={(e) => setMarginViewMode(e.target.value)}
+                      style={{ padding: '8px 12px', borderRadius: '4px', border: '1px solid #ccc', fontSize: '0.9em' }}
+                    >
+                      <option value="dollars">{t('viewInDollars')}</option>
+                      <option value="percent">{t('viewInPercent')}</option>
+                    </select>
+                    <select
+                      value={chartViewType}
+                      onChange={(e) => setChartViewType(e.target.value)}
+                      style={{ padding: '8px 12px', borderRadius: '4px', border: '1px solid #ccc', fontSize: '0.9em' }}
+                    >
+                      <option value="grouped">{t('chartViewGrouped')}</option>
+                      <option value="donut">{t('chartViewDonut')}</option>
+                      <option value="stacked">{t('chartViewStacked')}</option>
+                      <option value="waterfall">{t('chartViewWaterfall')}</option>
+                    </select>
+                  </div>
                 </div>
                 {comparisonData.length > 0 ? (
                   <>
-                    {chartViewType === 'grouped' && (
-                      <ResponsiveContainer width="100%" height={300}>
-                        <BarChart data={comparisonData}>
-                          <CartesianGrid strokeDasharray="3 3" />
-                          <XAxis dataKey="name" />
-                          <YAxis />
-                          <Tooltip formatter={(value) => `$${Number(value || 0).toLocaleString(undefined)}`} />
-                          <Legend />
-                          <Bar dataKey={t('income')} fill="#8884d8" />
-                          <Bar dataKey={t('totalCosts')} fill="#ffc658" />
-                          <Bar dataKey={t('margin')} fill="#82ca9d" />
-                        </BarChart>
-                      </ResponsiveContainer>
-                    )}
+                    {chartViewType === 'grouped' && (() => {
+                      // Transform data based on margin view mode
+                      const chartData = marginViewMode === 'percent' ? comparisonData.map(item => {
+                        const income = Number(item[t('income')]) || 0;
+                        const costs = Number(item[t('totalCosts')]) || 0;
+                        const margin = Number(item[t('margin')]) || 0;
+                        return {
+                          name: item.name,
+                          [t('income')]: income > 0 ? ((margin / income) * 100) : 0,
+                          [t('totalCosts')]: income > 0 ? ((costs / income) * 100) : 0,
+                          [t('margin')]: income > 0 ? ((margin / income) * 100) : 0,
+                        };
+                      }) : comparisonData;
+                      
+                      return (
+                        <ResponsiveContainer width="100%" height={300}>
+                          <BarChart data={chartData}>
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis dataKey="name" />
+                            <YAxis />
+                            <Tooltip formatter={(value) => 
+                              marginViewMode === 'percent' 
+                                ? `${Number(value || 0).toFixed(1)}%`
+                                : `$${Number(value || 0).toLocaleString(undefined)}`
+                            } />
+                            <Legend />
+                            <Bar dataKey={t('income')} fill="#8884d8" />
+                            <Bar dataKey={t('totalCosts')} fill="#ffc658" />
+                            <Bar dataKey={t('margin')} fill="#82ca9d" />
+                          </BarChart>
+                        </ResponsiveContainer>
+                      );
+                    })()}
                     {chartViewType === 'donut' && (() => {
                       const totalLiters = (productionData.daily_production_liters || 0) * (productionData.production_days || 0) * (productionData.animals_count || 0);
                       const channelData = {
@@ -1550,20 +1765,39 @@ function Module2Transformation({ user }) {
                         </ResponsiveContainer>
                       );
                     })()}
-                    {chartViewType === 'waterfall' && (
-                      <ResponsiveContainer width="100%" height={300}>
-                        <ComposedChart data={comparisonData}>
-                          <CartesianGrid strokeDasharray="3 3" />
-                          <XAxis dataKey="name" />
-                          <YAxis />
-                          <Tooltip formatter={(value) => `$${Number(value || 0).toLocaleString(undefined)}`} />
-                          <Legend />
-                          <Bar dataKey={t('income')} fill="#8884d8" />
-                          <Bar dataKey={t('totalCosts')} fill="#ffc658" />
-                          <Area type="monotone" dataKey={t('margin')} fill="#82ca9d" stroke="#82ca9d" />
-                        </ComposedChart>
-                      </ResponsiveContainer>
-                    )}
+                    {chartViewType === 'waterfall' && (() => {
+                      // Transform data based on margin view mode
+                      const chartData = marginViewMode === 'percent' ? comparisonData.map(item => {
+                        const income = Number(item[t('income')]) || 0;
+                        const costs = Number(item[t('totalCosts')]) || 0;
+                        const margin = Number(item[t('margin')]) || 0;
+                        return {
+                          name: item.name,
+                          [t('income')]: income > 0 ? ((margin / income) * 100) : 0,
+                          [t('totalCosts')]: income > 0 ? ((costs / income) * 100) : 0,
+                          [t('margin')]: income > 0 ? ((margin / income) * 100) : 0,
+                        };
+                      }) : comparisonData;
+                      
+                      return (
+                        <ResponsiveContainer width="100%" height={300}>
+                          <ComposedChart data={chartData}>
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis dataKey="name" />
+                            <YAxis />
+                            <Tooltip formatter={(value) => 
+                              marginViewMode === 'percent' 
+                                ? `${Number(value || 0).toFixed(1)}%`
+                                : `$${Number(value || 0).toLocaleString(undefined)}`
+                            } />
+                            <Legend />
+                            <Bar dataKey={t('income')} fill="#8884d8" />
+                            <Bar dataKey={t('totalCosts')} fill="#ffc658" />
+                            <Area type="monotone" dataKey={t('margin')} fill="#82ca9d" stroke="#82ca9d" />
+                          </ComposedChart>
+                        </ResponsiveContainer>
+                      );
+                    })()}
                   </>
                 ) : (
                   <div style={{ padding: '40px', textAlign: 'center', background: '#f5f5f5', borderRadius: '8px' }}>

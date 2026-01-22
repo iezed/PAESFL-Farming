@@ -284,6 +284,18 @@ export const translations = {
     rawMilkSaleModule1: 'Raw Milk Sale (Module 1):',
     transformationModule2: 'Transformation (Module 2):',
     importantNote: 'Important note:',
+    weightedAverageMix: 'Weighted Average of Mix',
+    priceWeightedAverageNote: 'Price is a weighted average across all products in the mix',
+    showProductDetails: 'Show Product Details',
+    hideProductDetails: 'Hide Product Details',
+    productDetailInChannel: 'Product Detail in Channel',
+    unitCost: 'Unit Cost',
+    unitMargin: 'Unit Margin',
+    viewInDollars: 'View in Dollars ($)',
+    viewInPercent: 'View in Percentage (%)',
+    marginViewMode: 'Margin View',
+    lastCalculationSaved: 'Last calculation saved',
+    autoLoadedResults: 'Automatically loaded saved results',
     
     // Module 3 - Scientific Lactation Engine
     module3Title: 'Module 3: Scientific Lactation Engine',
@@ -668,6 +680,18 @@ export const translations = {
     rawMilkSaleModule1: 'Venta de Leche Cruda (Módulo 1):',
     transformationModule2: 'Transformación (Módulo 2):',
     importantNote: 'Nota importante:',
+    weightedAverageMix: 'Promedio Ponderado del Mix',
+    priceWeightedAverageNote: 'El precio es un promedio ponderado entre todos los productos del mix',
+    showProductDetails: 'Ver Detalle por Producto',
+    hideProductDetails: 'Ocultar Detalle por Producto',
+    productDetailInChannel: 'Detalle por Producto en Canal',
+    unitCost: 'Costo Unitario',
+    unitMargin: 'Margen Unitario',
+    viewInDollars: 'Ver en Dólares ($)',
+    viewInPercent: 'Ver en Porcentaje (%)',
+    marginViewMode: 'Vista de Margen',
+    lastCalculationSaved: 'Último cálculo guardado',
+    autoLoadedResults: 'Resultados guardados cargados automáticamente',
     
     // Module 3 - Lactation
     // Module 3 - Motor Científico de Lactancia
