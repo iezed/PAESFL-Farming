@@ -429,14 +429,14 @@ function Module1Production({ user }) {
             <>
               <div className="card">
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '10px' }}>
-                  <h2 style={{ margin: 0 }}>{t('results')}</h2>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                  <h2 style={{ margin: 0, flex: '1 1 100%', minWidth: '200px' }}>{t('results')}</h2>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', width: '100%' }}>
                     {selectedScenario?.results && (
                       <div style={{ padding: '6px 12px', background: '#e8f5e9', borderRadius: '4px', fontSize: '0.85em', color: '#2e7d32' }}>
                         ✓ {t('autoLoadedResults')}
                       </div>
                     )}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
                       <label style={{ fontWeight: 'bold' }}>{t('viewPeriod')}:</label>
                       <select 
                         value={viewPeriod} 
@@ -456,10 +456,11 @@ function Module1Production({ user }) {
                     <>
                       <div style={{ marginBottom: '15px', padding: '10px', background: '#f0f7ff', borderRadius: '4px' }}>
                         <p style={{ margin: 0, fontSize: '0.9em', color: '#0066cc' }}>
-                          <strong>{t('note')}:</strong> Mostrando valores para período: <strong>{displayValues.label}</strong>
+                            <strong>{t('note')}:</strong> Mostrando valores para período: <strong>{displayValues.label}</strong>
                         </p>
                       </div>
-                            <table className="table">
+                      <div className="table-container" style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+                        <table className="table" style={{ minWidth: '400px' }}>
                         <tbody>
                           <tr>
                             <td><strong>{t('totalProduction')}</strong></td>
@@ -491,6 +492,7 @@ function Module1Production({ user }) {
                           </tr>
                         </tbody>
                       </table>
+                      </div>
                     </>
                   );
                 })()}

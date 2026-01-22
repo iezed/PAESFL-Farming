@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Fragment } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, ComposedChart, Area } from 'recharts';
 import api from '../../utils/api';
@@ -769,7 +769,11 @@ function Module2Transformation({ user }) {
                   )}
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '15px' }}>
+                <div style={{ 
+                  display: 'grid', 
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', 
+                  gap: '15px' 
+                }}>
                   <div className="form-group">
                     <label>{t('productType')}</label>
                     <select
@@ -1002,7 +1006,11 @@ function Module2Transformation({ user }) {
                   );
                 })()}
                 
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '15px' }}>
+                <div style={{ 
+                  display: 'grid', 
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', 
+                  gap: '15px' 
+                }}>
                   <div className="form-group">
                     <label>{t('directSalePercentage')}</label>
                     <input
@@ -1175,8 +1183,9 @@ function Module2Transformation({ user }) {
                   return (
                     <div style={{ marginBottom: '20px' }}>
                       <h3 style={{ fontSize: '1.1em', marginBottom: '15px' }}>{t('consolidatedSummary')}</h3>
-                      <table className="table">
-                        <tbody>
+                      <div className="table-container" style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+                        <table className="table" style={{ minWidth: '400px' }}>
+                          <tbody>
                           <tr>
                             <td><strong>{t('milkProductionCostPerLiter')}</strong></td>
                             <td>${totalMilkProductionCostPerLiter.toFixed(2)} ({t('inheritedFromModule1')})</td>
@@ -1207,44 +1216,47 @@ function Module2Transformation({ user }) {
                           </tr>
                         </tbody>
                       </table>
+                      </div>
                       
                       {products.length > 1 && (
-                        <>
+                        <div>
                           <h3 style={{ fontSize: '1.1em', marginTop: '25px', marginBottom: '15px' }}>{t('costPerKgByProduct')}</h3>
-                          <table className="table">
-                            <thead>
-                              <tr>
-                                <th>{t('product')}</th>
-                                <th>{t('productTableLiters')}</th>
-                                <th>{t('productTableKg')}</th>
-                                <th>{t('productTableMilkCost')}</th>
-                                <th>{t('productTableProcCost')}</th>
-                                <th>{t('productTablePackCost')}</th>
-                                <th>{t('productTableTotal')}</th>
-                                <th>{t('productTableCostPerKg')}</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {productBreakdowns.map((bd, idx) => (
-                                <tr key={idx}>
-                                  <td>{bd.product.product_type_custom || t(`productTypes.${bd.product.product_type}`) || bd.product.product_type}</td>
-                                  <td>{bd.productLiters.toLocaleString(undefined, { maximumFractionDigits: 2 })} L</td>
-                                  <td>{bd.productKg.toLocaleString(undefined, { maximumFractionDigits: 2 })} kg</td>
-                                  <td>${bd.productMilkCost.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
-                                  <td>${bd.productProcessingCost.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
-                                  <td>${bd.productPackagingCost.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
-                                  <td>${bd.totalProductCost.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
-                                  <td><strong>${bd.costPerKg.toFixed(2)}</strong></td>
+                          <div className="table-container" style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+                            <table className="table" style={{ minWidth: '700px' }}>
+                              <thead>
+                                <tr>
+                                  <th>{t('product')}</th>
+                                  <th>{t('productTableLiters')}</th>
+                                  <th>{t('productTableKg')}</th>
+                                  <th>{t('productTableMilkCost')}</th>
+                                  <th>{t('productTableProcCost')}</th>
+                                  <th>{t('productTablePackCost')}</th>
+                                  <th>{t('productTableTotal')}</th>
+                                  <th>{t('productTableCostPerKg')}</th>
                                 </tr>
-                              ))}
-                            </tbody>
-                          </table>
+                              </thead>
+                              <tbody>
+                                {productBreakdowns.map((bd, idx) => (
+                                  <tr key={idx}>
+                                    <td>{bd.product.product_type_custom || t(`productTypes.${bd.product.product_type}`) || bd.product.product_type}</td>
+                                    <td>{bd.productLiters.toLocaleString(undefined, { maximumFractionDigits: 2 })} L</td>
+                                    <td>{bd.productKg.toLocaleString(undefined, { maximumFractionDigits: 2 })} kg</td>
+                                    <td>${bd.productMilkCost.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
+                                    <td>${bd.productProcessingCost.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
+                                    <td>${bd.productPackagingCost.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
+                                    <td>${bd.totalProductCost.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
+                                    <td><strong>${bd.costPerKg.toFixed(2)}</strong></td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
                           <div style={{ marginTop: '15px', padding: '12px', background: '#f5f5f5', borderRadius: '6px', fontSize: '0.9em' }}>
                             <strong>{t('weightedAverageCostPerKg')}</strong>: ${averageCostPerKg.toFixed(2)} / kg
                             <br />
                             <small style={{ color: '#666' }}>{t('note')}: {t('weightedAverageCostPerKg')}</small>
                           </div>
-                        </>
+                        </div>
                       )}
                       {products.length === 1 && (
                         <div style={{ marginTop: '15px', padding: '12px', background: '#f5f5f5', borderRadius: '6px', fontSize: '0.9em' }}>
@@ -1439,7 +1451,8 @@ function Module2Transformation({ user }) {
                       <div style={{ marginBottom: '15px', padding: '12px', background: '#fff9e6', borderRadius: '6px', border: '1px solid #ffe066', fontSize: '0.9em' }}>
                         <strong>📌 {t('note')}:</strong> {t('priceWeightedAverageNote')}
                       </div>
-                      <table className="table">
+                      <div className="table-container" style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+                        <table className="table" style={{ minWidth: '800px' }}>
                         <thead>
                           <tr>
                             <th style={{ width: '30px' }}></th>
@@ -1477,8 +1490,8 @@ function Module2Transformation({ user }) {
                             const productDetails = getProductDetailsPerChannel(channel.key);
                             
                             return (
-                              <>
-                                <tr key={idx} style={{ opacity: channel.percentage === 0 ? 0.5 : 1 }}>
+                              <Fragment key={idx}>
+                                <tr style={{ opacity: channel.percentage === 0 ? 0.5 : 1 }}>
                                   <td style={{ cursor: 'pointer', textAlign: 'center' }}>
                                     {productDetails.length > 0 && (
                                       <button
@@ -1512,23 +1525,24 @@ function Module2Transformation({ user }) {
                                   <td>${channel.revenue.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
                                 </tr>
                                 {isExpanded && productDetails.length > 0 && (
-                                  <tr key={`${idx}-details`}>
+                                  <tr>
                                     <td colSpan="9" style={{ padding: '15px', background: '#f9f9f9' }}>
-                                      <div style={{ marginLeft: '30px' }}>
+                                      <div style={{ marginLeft: '0', paddingLeft: '10px' }}>
                                         <h4 style={{ marginTop: 0, marginBottom: '10px', fontSize: '1em' }}>
                                           {t('productDetailInChannel')}
                                         </h4>
-                                        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                                          <thead>
-                                            <tr style={{ borderBottom: '2px solid #ddd' }}>
-                                              <th style={{ padding: '8px', textAlign: 'left' }}>{t('product')}</th>
-                                              <th style={{ padding: '8px', textAlign: 'right' }}>Kg</th>
-                                              <th style={{ padding: '8px', textAlign: 'right' }}>{t('salesPrice')}</th>
-                                              <th style={{ padding: '8px', textAlign: 'right' }}>{t('unitCost')}</th>
-                                              <th style={{ padding: '8px', textAlign: 'right' }}>{t('unitMargin')}</th>
-                                              <th style={{ padding: '8px', textAlign: 'right' }}>{t('marginPercent')}</th>
-                                            </tr>
-                                          </thead>
+                                        <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+                                          <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '600px' }}>
+                                            <thead>
+                                              <tr style={{ borderBottom: '2px solid #ddd' }}>
+                                                <th style={{ padding: '8px', textAlign: 'left' }}>{t('product')}</th>
+                                                <th style={{ padding: '8px', textAlign: 'right' }}>Kg</th>
+                                                <th style={{ padding: '8px', textAlign: 'right' }}>{t('salesPrice')}</th>
+                                                <th style={{ padding: '8px', textAlign: 'right' }}>{t('unitCost')}</th>
+                                                <th style={{ padding: '8px', textAlign: 'right' }}>{t('unitMargin')}</th>
+                                                <th style={{ padding: '8px', textAlign: 'right' }}>{t('marginPercent')}</th>
+                                              </tr>
+                                            </thead>
                                           <tbody>
                                             {productDetails.map((detail, detailIdx) => (
                                               <tr key={detailIdx} style={{ borderBottom: '1px solid #eee' }}>
@@ -1562,11 +1576,12 @@ function Module2Transformation({ user }) {
                                             ))}
                                           </tbody>
                                         </table>
+                                        </div>
                                       </div>
                                     </td>
                                   </tr>
                                 )}
-                              </>
+                              </Fragment>
                             );
                           })}
                           <tr style={{ borderTop: '2px solid #333', fontWeight: 'bold' }}>
@@ -1581,6 +1596,7 @@ function Module2Transformation({ user }) {
                           </tr>
                         </tbody>
                       </table>
+                      </div>
                     </>
                   );
                 })()}
@@ -1600,40 +1616,42 @@ function Module2Transformation({ user }) {
                     <li><strong>{t('costsIncluded')}:</strong> {t('costsIncludedExplanation')}</li>
                   </ul>
                 </div>
-                <table className="table">
-                  <thead>
-                    <tr>
-                      <th>{t('concept')}</th>
-                      <th>{t('rawMilkSale')}</th>
-                      <th>{t('transformation')}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td><strong>{t('income')}</strong></td>
-                      <td>${results.milk_revenue?.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
-                      <td>${results.product_revenue?.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
-                    </tr>
-                    <tr>
-                      <td><strong>{t('margin')}</strong></td>
-                      <td>${results.milk_margin?.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
-                      <td>${results.transformation_margin?.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
-                    </tr>
-                    <tr>
-                      <td><strong>{t('difference')}</strong></td>
-                      <td colSpan="2">
-                        ${Math.abs(results.transformation_margin - results.milk_margin)?.toLocaleString(undefined, { maximumFractionDigits: 2 })}
-                        {' '}({results.better_option === 'transformación' ? t('betterTransform') : t('betterSellDirect')})
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
+                <div className="table-container" style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+                  <table className="table" style={{ minWidth: '500px' }}>
+                    <thead>
+                      <tr>
+                        <th>{t('concept')}</th>
+                        <th>{t('rawMilkSale')}</th>
+                        <th>{t('transformation')}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td><strong>{t('income')}</strong></td>
+                        <td>${results.milk_revenue?.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
+                        <td>${results.product_revenue?.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
+                      </tr>
+                      <tr>
+                        <td><strong>{t('margin')}</strong></td>
+                        <td>${results.milk_margin?.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
+                        <td>${results.transformation_margin?.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
+                      </tr>
+                      <tr>
+                        <td><strong>{t('difference')}</strong></td>
+                        <td colSpan="2">
+                          ${Math.abs(results.transformation_margin - results.milk_margin)?.toLocaleString(undefined, { maximumFractionDigits: 2 })}
+                          {' '}({results.better_option === 'transformación' ? t('betterTransform') : t('betterSellDirect')})
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
               </div>
 
               <div className="card">
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '10px' }}>
-                  <h2 style={{ margin: 0 }}>{t('visualization')}</h2>
-                  <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                  <h2 style={{ margin: 0, flex: '1 1 100%', minWidth: '200px' }}>{t('visualization')}</h2>
+                  <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
                     <label style={{ fontWeight: 'bold', fontSize: '0.9em' }}>{t('marginViewMode')}:</label>
                     <select
                       value={marginViewMode}
