@@ -447,6 +447,73 @@ router.post('/yield/:scenarioId', async (req, res) => {
   }
 });
 
+// Module 5: Gestation - Save/Update gestation data
+router.post('/gestation/:scenarioId', async (req, res) => {
+  try {
+    let pool;
+    try {
+      pool = getPool();
+    } catch (dbError) {
+      console.error('Database connection error:', dbError);
+      return res.status(500).json({ 
+        error: 'Database connection failed. Please check your environment variables.',
+        details: dbError.message 
+      });
+    }
+    
+    const scenarioId = parseInt(req.params.scenarioId);
+
+    if (!(await verifyScenarioOwnership(pool, scenarioId, req.user.userId))) {
+      return res.status(403).json({ error: 'Access denied: Scenario not found or you do not have permission' });
+    }
+
+    const { gestationData, calculatedGestationTimeline } = req.body;
+
+    // Check if gestation_data table exists, if not, create it
+    // For now, we'll store as JSONB in a new column or table
+    // Since we don't have a gestation_data table, we'll create one on the fly or use a JSONB column
+    
+    // First, let's check if we can add a JSONB column to scenarios or create a separate table
+    // For simplicity, let's create a gestation_data table if it doesn't exist
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS gestation_data (
+        id SERIAL PRIMARY KEY,
+        scenario_id INTEGER NOT NULL REFERENCES scenarios(id) ON DELETE CASCADE,
+        gestation_data JSONB,
+        calculated_gestation_timeline JSONB,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(scenario_id)
+      )
+    `);
+
+    // Save or update gestation data
+    const result = await pool.query(
+      `INSERT INTO gestation_data (scenario_id, gestation_data, calculated_gestation_timeline)
+       VALUES ($1, $2, $3)
+       ON CONFLICT (scenario_id) DO UPDATE SET
+         gestation_data = EXCLUDED.gestation_data,
+         calculated_gestation_timeline = EXCLUDED.calculated_gestation_timeline,
+         updated_at = CURRENT_TIMESTAMP
+       RETURNING *`,
+      [scenarioId, JSON.stringify(gestationData || {}), JSON.stringify(calculatedGestationTimeline || null)]
+    );
+
+    res.json({
+      ...result.rows[0],
+      gestationData: result.rows[0].gestation_data,
+      calculatedGestationTimeline: result.rows[0].calculated_gestation_timeline
+    });
+  } catch (error) {
+    console.error('Error saving gestation data:', error);
+    const errorMessage = error.message || 'Internal server error';
+    res.status(500).json({ 
+      error: errorMessage,
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
+  }
+});
+
 // Helper function to calculate and save results
 async function calculateAndSaveResults(pool, scenarioId) {
   // Get all scenario data

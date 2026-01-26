@@ -69,10 +69,18 @@ function Module5Gestation({ user }) {
       const scenario = response.data;
       setSelectedScenario(scenario);
       if (scenario.gestationData) {
-        setFormData(scenario.gestationData);
+        // Handle both JSON string and object
+        const gestationData = typeof scenario.gestationData === 'string' 
+          ? JSON.parse(scenario.gestationData) 
+          : scenario.gestationData;
+        setFormData(gestationData);
       }
       if (scenario.calculatedGestationTimeline) {
-        setCalculatedData(scenario.calculatedGestationTimeline);
+        // Handle both JSON string and object
+        const timeline = typeof scenario.calculatedGestationTimeline === 'string'
+          ? JSON.parse(scenario.calculatedGestationTimeline)
+          : scenario.calculatedGestationTimeline;
+        setCalculatedData(timeline);
       }
     } catch (error) {
       console.error('Error loading scenario:', error);
@@ -203,7 +211,7 @@ function Module5Gestation({ user }) {
 
     setLoading(true);
     try {
-      await api.put(`/scenarios/${selectedScenario.id}`, {
+      await api.post(`/modules/gestation/${selectedScenario.id}`, {
         gestationData: formData,
         calculatedGestationTimeline: calculatedData,
       });

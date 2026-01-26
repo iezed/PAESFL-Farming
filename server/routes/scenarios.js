@@ -67,15 +67,21 @@ router.get('/:id', async (req, res) => {
     const scenario = scenarioResult.rows[0];
 
     // Get all related data
-    const [productionData, transformationData, transformationProducts, lactationData, yieldData, results] = await Promise.all([
+    const [productionData, transformationData, transformationProducts, lactationData, yieldData, results, gestationData] = await Promise.all([
       pool.query('SELECT * FROM production_data WHERE scenario_id = $1', [scenarioId]),
       pool.query('SELECT * FROM transformation_data WHERE scenario_id = $1', [scenarioId]),
       pool.query('SELECT * FROM transformation_products WHERE scenario_id = $1 ORDER BY id', [scenarioId]),
       pool.query('SELECT * FROM lactation_data WHERE scenario_id = $1', [scenarioId]),
       pool.query('SELECT * FROM yield_data WHERE scenario_id = $1', [scenarioId]),
       pool.query('SELECT * FROM results WHERE scenario_id = $1', [scenarioId]),
+      pool.query('SELECT * FROM gestation_data WHERE scenario_id = $1', [scenarioId]).catch(() => ({ rows: [] })), // Gracefully handle if table doesn't exist yet
     ]);
 
+    const gestationRow = gestationData.rows[0];
+    // Parse JSONB fields if they exist (PostgreSQL JSONB is automatically parsed, but handle both cases)
+    const parsedGestationData = gestationRow?.gestation_data || null;
+    const parsedTimeline = gestationRow?.calculated_gestation_timeline || null;
+    
     res.json({
       ...scenario,
       productionData: productionData.rows[0] || null,
@@ -84,6 +90,8 @@ router.get('/:id', async (req, res) => {
       lactationData: lactationData.rows[0] || null,
       yieldData: yieldData.rows[0] || null,
       results: results.rows[0] || null,
+      gestationData: parsedGestationData,
+      calculatedGestationTimeline: parsedTimeline,
     });
   } catch (error) {
     console.error('Get scenario error:', error);
@@ -235,16 +243,36 @@ router.put('/:id', async (req, res) => {
       });
     }
     const scenarioId = parseInt(req.params.id);
-    const { name, description } = req.body;
+    const { name, description, gestationData, calculatedGestationTimeline } = req.body;
 
-    const result = await pool.query(
-      'UPDATE scenarios SET name = $1, description = $2, updated_at = CURRENT_TIMESTAMP WHERE id = $3 AND user_id = $4 RETURNING *',
-      [name, description, scenarioId, req.user.userId]
+    // Get existing scenario to preserve name/description if not provided
+    const existingScenario = await pool.query(
+      'SELECT name, description FROM scenarios WHERE id = $1 AND user_id = $2',
+      [scenarioId, req.user.userId]
     );
 
-    if (result.rows.length === 0) {
+    if (existingScenario.rows.length === 0) {
       return res.status(404).json({ error: 'Scenario not found' });
     }
+
+    // Use provided values or preserve existing ones
+    const updatedName = name !== undefined ? name : existingScenario.rows[0].name;
+    const updatedDescription = description !== undefined ? description : existingScenario.rows[0].description;
+
+    // If name is null or empty, use existing name
+    if (!updatedName) {
+      return res.status(400).json({ error: 'Scenario name cannot be empty' });
+    }
+
+    // Update scenario with name and description
+    const result = await pool.query(
+      'UPDATE scenarios SET name = $1, description = $2, updated_at = CURRENT_TIMESTAMP WHERE id = $3 AND user_id = $4 RETURNING *',
+      [updatedName, updatedDescription, scenarioId, req.user.userId]
+    );
+
+    // If gestation data is provided, save it (we'll handle this in a separate endpoint or table)
+    // For now, we'll just return the updated scenario
+    // TODO: Create a proper gestation_data table or endpoint
 
     res.json(result.rows[0]);
   } catch (error) {
