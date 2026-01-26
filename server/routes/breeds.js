@@ -13,7 +13,16 @@ router.use(authenticateToken);
  */
 router.get('/', async (req, res) => {
   try {
-    const pool = getPool();
+    let pool;
+    try {
+      pool = getPool();
+    } catch (dbError) {
+      console.error('Database connection error:', dbError);
+      return res.status(500).json({ 
+        error: 'Database connection failed. Please check your environment variables.',
+        details: dbError.message 
+      });
+    }
     
     const result = await pool.query(`
       SELECT 
@@ -40,7 +49,11 @@ router.get('/', async (req, res) => {
     res.json(result.rows);
   } catch (error) {
     console.error('Error fetching breeds:', error);
-    res.status(500).json({ error: error.message });
+    const errorMessage = error.message || 'Internal server error';
+    res.status(500).json({ 
+      error: errorMessage,
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
   }
 });
 
@@ -50,7 +63,17 @@ router.get('/', async (req, res) => {
  */
 router.get('/:breedName', async (req, res) => {
   try {
-    const pool = getPool();
+    let pool;
+    try {
+      pool = getPool();
+    } catch (dbError) {
+      console.error('Database connection error:', dbError);
+      return res.status(500).json({ 
+        error: 'Database connection failed. Please check your environment variables.',
+        details: dbError.message 
+      });
+    }
+    
     const { breedName } = req.params;
     
     const result = await pool.query(
@@ -65,7 +88,11 @@ router.get('/:breedName', async (req, res) => {
     res.json(result.rows[0]);
   } catch (error) {
     console.error('Error fetching breed:', error);
-    res.status(500).json({ error: error.message });
+    const errorMessage = error.message || 'Internal server error';
+    res.status(500).json({ 
+      error: errorMessage,
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
   }
 });
 
@@ -76,7 +103,17 @@ router.get('/:breedName', async (req, res) => {
  */
 router.get('/compare/:breedNames', async (req, res) => {
   try {
-    const pool = getPool();
+    let pool;
+    try {
+      pool = getPool();
+    } catch (dbError) {
+      console.error('Database connection error:', dbError);
+      return res.status(500).json({ 
+        error: 'Database connection failed. Please check your environment variables.',
+        details: dbError.message 
+      });
+    }
+    
     const breedNames = req.params.breedNames.split(',').map(name => name.trim());
     
     if (breedNames.length < 2) {
@@ -96,7 +133,11 @@ router.get('/compare/:breedNames', async (req, res) => {
     res.json(result.rows);
   } catch (error) {
     console.error('Error comparing breeds:', error);
-    res.status(500).json({ error: error.message });
+    const errorMessage = error.message || 'Internal server error';
+    res.status(500).json({ 
+      error: errorMessage,
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
   }
 });
 

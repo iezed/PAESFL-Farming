@@ -21,7 +21,17 @@ async function verifyScenarioOwnership(pool, scenarioId, userId) {
 // Module 1: Production & Sales - Save/Update production data
 router.post('/production/:scenarioId', async (req, res) => {
   try {
-    const pool = getPool();
+    let pool;
+    try {
+      pool = getPool();
+    } catch (dbError) {
+      console.error('Database connection error:', dbError);
+      return res.status(500).json({ 
+        error: 'Database connection failed. Please check your environment variables.',
+        details: dbError.message 
+      });
+    }
+    
     const scenarioId = parseInt(req.params.scenarioId);
 
     if (!(await verifyScenarioOwnership(pool, scenarioId, req.user.userId))) {
@@ -106,7 +116,11 @@ router.post('/production/:scenarioId', async (req, res) => {
     } else if (error.message && error.message.includes('numeric')) {
       res.status(400).json({ error: 'Invalid numeric value. Please check all input fields.' });
     } else {
-      res.status(500).json({ error: error.message || 'Error saving data' });
+      const errorMessage = error.message || 'Error saving data';
+      res.status(500).json({ 
+        error: errorMessage,
+        details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      });
     }
   }
 });
@@ -115,7 +129,17 @@ router.post('/production/:scenarioId', async (req, res) => {
 // Supports both legacy single product and new Product Mix (multiple products)
 router.post('/transformation/:scenarioId', async (req, res) => {
   try {
-    const pool = getPool();
+    let pool;
+    try {
+      pool = getPool();
+    } catch (dbError) {
+      console.error('Database connection error:', dbError);
+      return res.status(500).json({ 
+        error: 'Database connection failed. Please check your environment variables.',
+        details: dbError.message 
+      });
+    }
+    
     const scenarioId = parseInt(req.params.scenarioId);
 
     if (!(await verifyScenarioOwnership(pool, scenarioId, req.user.userId))) {
@@ -248,7 +272,12 @@ router.post('/transformation/:scenarioId', async (req, res) => {
       res.json(result.rows[0]);
     }
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error('Error saving transformation data:', error);
+    const errorMessage = error.message || 'Internal server error';
+    res.status(500).json({ 
+      error: errorMessage,
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
   }
 });
 
@@ -256,7 +285,17 @@ router.post('/transformation/:scenarioId', async (req, res) => {
 // Module 3: Scientific Lactation - Save/Update lactation simulation
 router.post('/lactation/:scenarioId', async (req, res) => {
   try {
-    const pool = getPool();
+    let pool;
+    try {
+      pool = getPool();
+    } catch (dbError) {
+      console.error('Database connection error:', dbError);
+      return res.status(500).json({ 
+        error: 'Database connection failed. Please check your environment variables.',
+        details: dbError.message 
+      });
+    }
+    
     const scenarioId = parseInt(req.params.scenarioId);
 
     if (!(await verifyScenarioOwnership(pool, scenarioId, req.user.userId))) {
@@ -350,14 +389,28 @@ router.post('/lactation/:scenarioId', async (req, res) => {
     });
   } catch (error) {
     console.error('Lactation simulation error:', error);
-    res.status(500).json({ error: error.message });
+    const errorMessage = error.message || 'Internal server error';
+    res.status(500).json({ 
+      error: errorMessage,
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
   }
 });
 
 // Module 4: Yield - Save/Update yield data
 router.post('/yield/:scenarioId', async (req, res) => {
   try {
-    const pool = getPool();
+    let pool;
+    try {
+      pool = getPool();
+    } catch (dbError) {
+      console.error('Database connection error:', dbError);
+      return res.status(500).json({ 
+        error: 'Database connection failed. Please check your environment variables.',
+        details: dbError.message 
+      });
+    }
+    
     const scenarioId = parseInt(req.params.scenarioId);
 
     if (!(await verifyScenarioOwnership(pool, scenarioId, req.user.userId))) {
@@ -385,7 +438,12 @@ router.post('/yield/:scenarioId', async (req, res) => {
 
     res.json(result.rows[0]);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error('Error saving yield data:', error);
+    const errorMessage = error.message || 'Internal server error';
+    res.status(500).json({ 
+      error: errorMessage,
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
   }
 });
 

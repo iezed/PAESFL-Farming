@@ -14,7 +14,17 @@ router.use(authenticateToken);
  */
 router.get('/breeds', async (req, res) => {
   try {
-    const pool = getPool();
+    let pool;
+    try {
+      pool = getPool();
+    } catch (dbError) {
+      console.error('Database connection error:', dbError);
+      return res.status(500).json({ 
+        error: 'Database connection failed. Please check your environment variables.',
+        details: dbError.message 
+      });
+    }
+    
     const result = await pool.query(`
       SELECT 
         id, breed_name, breed_key, country_or_system, source_tags, notes,
@@ -32,7 +42,11 @@ router.get('/breeds', async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching breeds:', error);
-    res.status(500).json({ error: error.message });
+    const errorMessage = error.message || 'Internal server error';
+    res.status(500).json({ 
+      error: errorMessage,
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
   }
 });
 
@@ -42,7 +56,17 @@ router.get('/breeds', async (req, res) => {
  */
 router.get('/breeds/:breedKey', async (req, res) => {
   try {
-    const pool = getPool();
+    let pool;
+    try {
+      pool = getPool();
+    } catch (dbError) {
+      console.error('Database connection error:', dbError);
+      return res.status(500).json({ 
+        error: 'Database connection failed. Please check your environment variables.',
+        details: dbError.message 
+      });
+    }
+    
     const { breedKey } = req.params;
     
     const result = await pool.query(
@@ -60,7 +84,11 @@ router.get('/breeds/:breedKey', async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching breed:', error);
-    res.status(500).json({ error: error.message });
+    const errorMessage = error.message || 'Internal server error';
+    res.status(500).json({ 
+      error: errorMessage,
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
   }
 });
 
@@ -71,7 +99,17 @@ router.get('/breeds/:breedKey', async (req, res) => {
  */
 router.post('/simulate', async (req, res) => {
   try {
-    const pool = getPool();
+    let pool;
+    try {
+      pool = getPool();
+    } catch (dbError) {
+      console.error('Database connection error:', dbError);
+      return res.status(500).json({ 
+        error: 'Database connection failed. Please check your environment variables.',
+        details: dbError.message 
+      });
+    }
+    
     const { breed_key, overrides = {} } = req.body;
     
     if (!breed_key) {
@@ -106,7 +144,11 @@ router.post('/simulate', async (req, res) => {
     });
   } catch (error) {
     console.error('Error simulating breed:', error);
-    res.status(500).json({ error: error.message });
+    const errorMessage = error.message || 'Internal server error';
+    res.status(500).json({ 
+      error: errorMessage,
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
   }
 });
 
@@ -120,7 +162,17 @@ router.post('/simulate', async (req, res) => {
  */
 router.post('/compare', async (req, res) => {
   try {
-    const pool = getPool();
+    let pool;
+    try {
+      pool = getPool();
+    } catch (dbError) {
+      console.error('Database connection error:', dbError);
+      return res.status(500).json({ 
+        error: 'Database connection failed. Please check your environment variables.',
+        details: dbError.message 
+      });
+    }
+    
     const { a, b } = req.body;
     
     if (!a?.breed_key || !b?.breed_key) {
@@ -166,7 +218,11 @@ router.post('/compare', async (req, res) => {
     });
   } catch (error) {
     console.error('Error comparing breeds:', error);
-    res.status(500).json({ error: error.message });
+    const errorMessage = error.message || 'Internal server error';
+    res.status(500).json({ 
+      error: errorMessage,
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
   }
 });
 
@@ -180,7 +236,17 @@ router.post('/compare', async (req, res) => {
  */
 router.post('/rank', async (req, res) => {
   try {
-    const pool = getPool();
+    let pool;
+    try {
+      pool = getPool();
+    } catch (dbError) {
+      console.error('Database connection error:', dbError);
+      return res.status(500).json({ 
+        error: 'Database connection failed. Please check your environment variables.',
+        details: dbError.message 
+      });
+    }
+    
     const { scenarios = [], mode = 'per_head' } = req.body;
     
     if (!Array.isArray(scenarios) || scenarios.length === 0) {
@@ -232,7 +298,11 @@ router.post('/rank', async (req, res) => {
     });
   } catch (error) {
     console.error('Error ranking breeds:', error);
-    res.status(500).json({ error: error.message });
+    const errorMessage = error.message || 'Internal server error';
+    res.status(500).json({ 
+      error: errorMessage,
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
   }
 });
 
@@ -243,7 +313,17 @@ router.post('/rank', async (req, res) => {
  */
 router.post('/scenario/:scenarioId/save', async (req, res) => {
   try {
-    const pool = getPool();
+    let pool;
+    try {
+      pool = getPool();
+    } catch (dbError) {
+      console.error('Database connection error:', dbError);
+      return res.status(500).json({ 
+        error: 'Database connection failed. Please check your environment variables.',
+        details: dbError.message 
+      });
+    }
+    
     const scenarioId = parseInt(req.params.scenarioId);
     const { breed_key, overrides = {} } = req.body;
     
@@ -334,7 +414,11 @@ router.post('/scenario/:scenarioId/save', async (req, res) => {
     });
   } catch (error) {
     console.error('Error saving breed scenario:', error);
-    res.status(500).json({ error: error.message });
+    const errorMessage = error.message || 'Internal server error';
+    res.status(500).json({ 
+      error: errorMessage,
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
   }
 });
 
@@ -344,7 +428,17 @@ router.post('/scenario/:scenarioId/save', async (req, res) => {
  */
 router.get('/scenario/:scenarioId/load', async (req, res) => {
   try {
-    const pool = getPool();
+    let pool;
+    try {
+      pool = getPool();
+    } catch (dbError) {
+      console.error('Database connection error:', dbError);
+      return res.status(500).json({ 
+        error: 'Database connection failed. Please check your environment variables.',
+        details: dbError.message 
+      });
+    }
+    
     const scenarioId = parseInt(req.params.scenarioId);
     
     // Verify scenario ownership
@@ -376,7 +470,11 @@ router.get('/scenario/:scenarioId/load', async (req, res) => {
     });
   } catch (error) {
     console.error('Error loading breed scenarios:', error);
-    res.status(500).json({ error: error.message });
+    const errorMessage = error.message || 'Internal server error';
+    res.status(500).json({ 
+      error: errorMessage,
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
   }
 });
 
