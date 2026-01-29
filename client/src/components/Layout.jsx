@@ -3,6 +3,7 @@ import { useI18n } from '../i18n/I18nContext';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { getAuthToken } from '../utils/auth';
 import { getAvatar } from '../utils/avatar';
+import OnboardingModal from './OnboardingModal';
 
 function Sidebar({ user, onLogout }) {
   const { t, language, changeLanguage } = useI18n();
@@ -349,6 +350,19 @@ function Layout({ children, user, onLogout }) {
     return saved !== null ? saved === 'true' : false; // Default to false (light mode)
   });
 
+  // Onboarding modal state
+  const [showOnboarding, setShowOnboarding] = useState(false);
+
+  // Check if user needs onboarding on mount
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      const onboardingCompleted = localStorage.getItem(`onboarding_completed_${user.id}`);
+      if (!onboardingCompleted) {
+        setShowOnboarding(true);
+      }
+    }
+  }, [isAuthenticated, user]);
+
   // Save settings to localStorage when they change
   useEffect(() => {
     localStorage.setItem('showSidebar', showSidebar.toString());
@@ -389,23 +403,31 @@ function Layout({ children, user, onLogout }) {
   
   if (isAuthenticated) {
     return (
-      <div className={gridClass}>
-        {showSidebar && <Sidebar user={user} onLogout={onLogout} />}
-        <Header 
-          user={user} 
-          onLogout={onLogout}
-          showSidebar={showSidebar}
-          setShowSidebar={setShowSidebar}
-          showFooter={showFooter}
-          setShowFooter={setShowFooter}
-          darkMode={darkMode}
-          setDarkMode={setDarkMode}
-        />
-        <main className="site-main">
-          {children}
-        </main>
-        {showFooter && <Footer />}
-      </div>
+      <>
+        <div className={gridClass}>
+          {showSidebar && <Sidebar user={user} onLogout={onLogout} />}
+          <Header 
+            user={user} 
+            onLogout={onLogout}
+            showSidebar={showSidebar}
+            setShowSidebar={setShowSidebar}
+            showFooter={showFooter}
+            setShowFooter={setShowFooter}
+            darkMode={darkMode}
+            setDarkMode={setDarkMode}
+          />
+          <main className="site-main">
+            {children}
+          </main>
+          {showFooter && <Footer />}
+        </div>
+        {showOnboarding && (
+          <OnboardingModal 
+            user={user} 
+            onClose={() => setShowOnboarding(false)} 
+          />
+        )}
+      </>
     );
   }
   

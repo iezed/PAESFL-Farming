@@ -4,10 +4,12 @@ import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, L
 import api from '../../utils/api';
 import { useI18n } from '../../i18n/I18nContext';
 import AlertModal from '../AlertModal';
+import { useChartColors } from '../../hooks/useDarkMode';
 
 function Module5Summary({ user }) {
   const { t } = useI18n();
   const navigate = useNavigate();
+  const chartColors = useChartColors();
   const [scenarios, setScenarios] = useState([]);
   const [selectedScenarios, setSelectedScenarios] = useState([]);
   const [comparison, setComparison] = useState(null);
@@ -242,38 +244,59 @@ function Module5Summary({ user }) {
             <h3 style={{ marginBottom: '15px' }}>{t('incomeCostsAndMargins')}</h3>
             <ResponsiveContainer width="100%" height={400}>
               <BarChart data={comparisonData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="nameWithLabel" angle={-45} textAnchor="end" height={100} />
-                <YAxis />
-                <Tooltip formatter={(value) => `$${Number(value || 0).toLocaleString(undefined)}`} />
+                <CartesianGrid strokeDasharray="3 3" stroke={chartColors.grid} />
+                <XAxis dataKey="nameWithLabel" angle={-45} textAnchor="end" height={100} stroke={chartColors.axis.tick} />
+                <YAxis stroke={chartColors.axis.tick} />
+                <Tooltip 
+                  formatter={(value) => `$${Number(value || 0).toLocaleString(undefined)}`}
+                  contentStyle={{ 
+                    backgroundColor: chartColors.tooltip.bg, 
+                    border: `1px solid ${chartColors.tooltip.border}`,
+                    color: chartColors.tooltip.text
+                  }}
+                />
                 <Legend />
-                <Bar dataKey={t('income')} fill="#8884d8" />
-                <Bar dataKey={t('totalCosts')} fill="#ffc658" />
-                <Bar dataKey={t('margin')} fill="#82ca9d" />
+                <Bar dataKey={t('income')} fill={chartColors.primary} />
+                <Bar dataKey={t('totalCosts')} fill={chartColors.tertiary} />
+                <Bar dataKey={t('margin')} fill={chartColors.secondary} />
               </BarChart>
             </ResponsiveContainer>
 
             <h3 style={{ marginTop: '30px', marginBottom: '15px' }}>{t('incomeComparison')}</h3>
             <ResponsiveContainer width="100%" height={300}>
               <LineChart data={revenueData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
-                <YAxis />
-                <Tooltip formatter={(value) => `$${Number(value || 0).toLocaleString(undefined)}`} />
+                <CartesianGrid strokeDasharray="3 3" stroke={chartColors.grid} />
+                <XAxis dataKey="name" stroke={chartColors.axis.tick} />
+                <YAxis stroke={chartColors.axis.tick} />
+                <Tooltip 
+                  formatter={(value) => `$${Number(value || 0).toLocaleString(undefined)}`}
+                  contentStyle={{ 
+                    backgroundColor: chartColors.tooltip.bg, 
+                    border: `1px solid ${chartColors.tooltip.border}`,
+                    color: chartColors.tooltip.text
+                  }}
+                />
                 <Legend />
-                <Line type="monotone" dataKey={t('income')} stroke="#8884d8" strokeWidth={2} />
+                <Line type="monotone" dataKey={t('income')} stroke={chartColors.primary} strokeWidth={2} />
               </LineChart>
             </ResponsiveContainer>
 
             <h3 style={{ marginTop: '30px', marginBottom: '15px' }}>{t('marginsByScenario')}</h3>
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={comparisonData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="nameWithLabel" angle={-45} textAnchor="end" height={100} />
-                <YAxis />
-                <Tooltip formatter={(value) => `${Number(value || 0).toFixed(2)}%`} />
+                <CartesianGrid strokeDasharray="3 3" stroke={chartColors.grid} />
+                <XAxis dataKey="nameWithLabel" angle={-45} textAnchor="end" height={100} stroke={chartColors.axis.tick} />
+                <YAxis stroke={chartColors.axis.tick} />
+                <Tooltip 
+                  formatter={(value) => `${Number(value || 0).toFixed(2)}%`}
+                  contentStyle={{ 
+                    backgroundColor: chartColors.tooltip.bg, 
+                    border: `1px solid ${chartColors.tooltip.border}`,
+                    color: chartColors.tooltip.text
+                  }}
+                />
                 <Legend />
-                <Bar dataKey={t('marginPercentage')} fill="#82ca9d" />
+                <Bar dataKey={t('marginPercentage')} fill={chartColors.secondary} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -293,7 +316,7 @@ function Module5Summary({ user }) {
                         value: p.distribution_percentage || 0,
                       }));
                       
-                      const COLORS = ['#8884d8', '#82ca9d', '#ffc658', '#ff7300', '#00ff00', '#0088fe'];
+                      const COLORS = [chartColors.primary, chartColors.secondary, chartColors.tertiary, chartColors.quaternary, chartColors.quinary, chartColors.senary];
                       
                       return (
                         <div key={idx} style={{ marginBottom: '30px' }}>
@@ -307,14 +330,20 @@ function Module5Summary({ user }) {
                                 labelLine={false}
                                 label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
                                 outerRadius={80}
-                                fill="#8884d8"
+                                fill={chartColors.primary}
                                 dataKey="value"
                               >
                                 {productsData.map((entry, index) => (
                                   <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                 ))}
                               </Pie>
-                              <Tooltip />
+                              <Tooltip 
+                                contentStyle={{ 
+                                  backgroundColor: chartColors.tooltip.bg, 
+                                  border: `1px solid ${chartColors.tooltip.border}`,
+                                  color: chartColors.tooltip.text
+                                }}
+                              />
                             </PieChart>
                           </ResponsiveContainer>
                         </div>
@@ -357,7 +386,7 @@ function Module5Summary({ user }) {
                         }
                       }
                       
-                      const COLORS_CHANNELS = ['#8884d8', '#82ca9d', '#ffc658'];
+                      const COLORS_CHANNELS = [chartColors.primary, chartColors.secondary, chartColors.tertiary];
                       
                       return (
                         <div key={idx} style={{ marginBottom: '30px' }}>
@@ -371,14 +400,20 @@ function Module5Summary({ user }) {
                                 labelLine={false}
                                 label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
                                 outerRadius={80}
-                                fill="#8884d8"
+                                fill={chartColors.primary}
                                 dataKey="value"
                               >
                                 {channelsData.map((entry, index) => (
                                   <Cell key={`cell-${index}`} fill={COLORS_CHANNELS[index % COLORS_CHANNELS.length]} />
                                 ))}
                               </Pie>
-                              <Tooltip />
+                              <Tooltip 
+                                contentStyle={{ 
+                                  backgroundColor: chartColors.tooltip.bg, 
+                                  border: `1px solid ${chartColors.tooltip.border}`,
+                                  color: chartColors.tooltip.text
+                                }}
+                              />
                             </PieChart>
                           </ResponsiveContainer>
                         </div>

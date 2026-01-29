@@ -5,12 +5,14 @@ import api from '../../utils/api';
 import { useI18n } from '../../i18n/I18nContext';
 import AlertModal from '../AlertModal';
 import CostCalculatorModal from '../CostCalculatorModal';
+import { useChartColors } from '../../hooks/useDarkMode';
 
 function Module1Production({ user }) {
   const { t } = useI18n();
   const location = useLocation();
   const navigate = useNavigate();
   const scenarioId = location.state?.scenarioId;
+  const chartColors = useChartColors();
 
   const [formData, setFormData] = useState({
     daily_production_liters: '',
@@ -318,6 +320,18 @@ function Module1Production({ user }) {
           {t('backToDashboard')}
         </button>
         <h1 style={{ marginTop: '20px' }}>{t('module1Title')}</h1>
+        <div style={{ 
+          marginTop: '16px', 
+          padding: '18px 24px', 
+          background: 'linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%)', 
+          borderRadius: '12px',
+          borderLeft: '4px solid #2d5016',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.08)'
+        }}>
+          <p style={{ margin: 0, fontSize: '15px', lineHeight: '1.6', color: '#1565c0' }}>
+            ℹ️ {t('module1Explanation')}
+          </p>
+        </div>
       </header>
 
       <div className="card">
@@ -520,8 +534,19 @@ function Module1Production({ user }) {
                   <h2 style={{ margin: 0, flex: '1 1 100%', minWidth: '200px' }}>{t('results')}</h2>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', width: '100%' }}>
                     {selectedScenario?.results && (
-                      <div style={{ padding: '6px 12px', background: '#e8f5e9', borderRadius: '4px', fontSize: '0.85em', color: '#2e7d32' }}>
-                        ✓ {t('autoLoadedResults')}
+                      <div style={{ 
+                        padding: '10px 16px', 
+                        background: 'linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%)', 
+                        borderRadius: '8px', 
+                        fontSize: '0.9em', 
+                        color: '#1b5e20',
+                        fontWeight: '600',
+                        boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px'
+                      }}>
+                        <span style={{ fontSize: '1.2em' }}>✓</span> {t('autoLoadedResults')}
                       </div>
                     )}
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
@@ -620,16 +645,23 @@ function Module1Production({ user }) {
                   return (
                     <ResponsiveContainer width="100%" height={300}>
                       <BarChart data={displayChartData}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="name" />
-                        <YAxis />
-                        <Tooltip formatter={(value) => 
-                          marginViewMode === 'percent' 
-                            ? `${Number(value || 0).toFixed(1)}%`
-                            : `$${Number(value || 0).toLocaleString(undefined)}`
-                        } />
+                        <CartesianGrid strokeDasharray="3 3" stroke={chartColors.grid} />
+                        <XAxis dataKey="name" stroke={chartColors.axis.tick} />
+                        <YAxis stroke={chartColors.axis.tick} />
+                        <Tooltip 
+                          formatter={(value) => 
+                            marginViewMode === 'percent' 
+                              ? `${Number(value || 0).toFixed(1)}%`
+                              : `$${Number(value || 0).toLocaleString(undefined)}`
+                          }
+                          contentStyle={{ 
+                            backgroundColor: chartColors.tooltip.bg, 
+                            border: `1px solid ${chartColors.tooltip.border}`,
+                            color: chartColors.tooltip.text
+                          }}
+                        />
                         <Legend />
-                        <Bar dataKey="value" fill="#8884d8" />
+                        <Bar dataKey="value" fill={chartColors.primary} />
                       </BarChart>
                     </ResponsiveContainer>
                   );
@@ -643,12 +675,19 @@ function Module1Production({ user }) {
                 {costBreakdown.length > 0 ? (
                   <ResponsiveContainer width="100%" height={300}>
                     <BarChart data={costBreakdown}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" />
-                    <YAxis />
-                    <Tooltip formatter={(value) => `$${value.toFixed(2)}`} />
+                    <CartesianGrid strokeDasharray="3 3" stroke={chartColors.grid} />
+                    <XAxis dataKey="name" stroke={chartColors.axis.tick} />
+                    <YAxis stroke={chartColors.axis.tick} />
+                    <Tooltip 
+                      formatter={(value) => `$${value.toFixed(2)}`}
+                      contentStyle={{ 
+                        backgroundColor: chartColors.tooltip.bg, 
+                        border: `1px solid ${chartColors.tooltip.border}`,
+                        color: chartColors.tooltip.text
+                      }}
+                    />
                     <Legend />
-                    <Bar dataKey="value" fill="#82ca9d" />
+                    <Bar dataKey="value" fill={chartColors.secondary} />
                   </BarChart>
                 </ResponsiveContainer>
                 ) : (
@@ -656,6 +695,124 @@ function Module1Production({ user }) {
                     <p style={{ color: '#666', margin: 0 }}>{t('noCostDataToShow')}</p>
                   </div>
                 )}
+              </div>
+
+              {/* Integrated Dashboard View */}
+              <div className="card" style={{ marginTop: '2rem' }}>
+                <h2 className="card-section-title">{t('integratedDashboard') || 'Integrated Dashboard'}</h2>
+                <p style={{ marginBottom: '2rem', color: 'var(--text-secondary)' }}>
+                  {t('dashboardDescription') || 'Comprehensive view of all metrics and charts for quick decision-making'}
+                </p>
+                
+                {/* Key Metrics Grid */}
+                <div style={{ 
+                  display: 'grid', 
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
+                  gap: '1rem', 
+                  marginBottom: '2rem' 
+                }}>
+                  <div style={{ 
+                    padding: '1.5rem', 
+                    background: 'var(--bg-secondary)', 
+                    borderRadius: '8px',
+                    border: '1px solid var(--border-color)'
+                  }}>
+                    <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
+                      {t('totalRevenue') || 'Total Revenue'}
+                    </div>
+                    <div style={{ fontSize: '2rem', fontWeight: '700', color: 'var(--text-primary)' }}>
+                      ${Number(results.total_revenue || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </div>
+                  </div>
+                  <div style={{ 
+                    padding: '1.5rem', 
+                    background: 'var(--bg-secondary)', 
+                    borderRadius: '8px',
+                    border: '1px solid var(--border-color)'
+                  }}>
+                    <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
+                      {t('totalCosts') || 'Total Costs'}
+                    </div>
+                    <div style={{ fontSize: '2rem', fontWeight: '700', color: 'var(--text-primary)' }}>
+                      ${Number(results.total_costs || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </div>
+                  </div>
+                  <div style={{ 
+                    padding: '1.5rem', 
+                    background: 'var(--bg-secondary)', 
+                    borderRadius: '8px',
+                    border: '1px solid var(--border-color)'
+                  }}>
+                    <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
+                      {t('grossMargin') || 'Gross Margin'}
+                    </div>
+                    <div style={{ fontSize: '2rem', fontWeight: '700', color: results.gross_margin >= 0 ? 'var(--success-color)' : 'var(--error-color)' }}>
+                      ${Number(results.gross_margin || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </div>
+                    <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
+                      {results.margin_percentage?.toFixed(2)}%
+                    </div>
+                  </div>
+                </div>
+
+                {/* Charts Grid */}
+                <div style={{ 
+                  display: 'grid', 
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', 
+                  gap: '2rem' 
+                }}>
+                  {/* Income/Costs/Margin Chart */}
+                  <div>
+                    <h3 style={{ marginBottom: '1rem', fontSize: '1.125rem', fontWeight: '600' }}>
+                      {t('financialOverview') || 'Financial Overview'}
+                    </h3>
+                    {chartData.length > 0 ? (
+                      <ResponsiveContainer width="100%" height={300}>
+                        <BarChart data={chartData}>
+                          <CartesianGrid strokeDasharray="3 3" stroke={chartColors.grid} />
+                          <XAxis dataKey="name" stroke={chartColors.axis.tick} />
+                          <YAxis stroke={chartColors.axis.tick} />
+                          <Tooltip 
+                            formatter={(value) => `$${Number(value || 0).toLocaleString(undefined)}`}
+                            contentStyle={{ 
+                              backgroundColor: chartColors.tooltip.bg, 
+                              border: `1px solid ${chartColors.tooltip.border}`,
+                              color: chartColors.tooltip.text
+                            }}
+                          />
+                          <Legend />
+                          <Bar dataKey="value" fill={chartColors.primary} />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    ) : null}
+                  </div>
+
+                  {/* Cost Breakdown Chart */}
+                  <div>
+                    <h3 style={{ marginBottom: '1rem', fontSize: '1.125rem', fontWeight: '600' }}>
+                      {t('costBreakdown') || 'Cost Breakdown'}
+                    </h3>
+                    {costBreakdown.length > 0 ? (
+                      <ResponsiveContainer width="100%" height={300}>
+                        <BarChart data={costBreakdown}>
+                          <CartesianGrid strokeDasharray="3 3" stroke={chartColors.grid} />
+                          <XAxis dataKey="name" stroke={chartColors.axis.tick} />
+                          <YAxis stroke={chartColors.axis.tick} />
+                          <Tooltip 
+                            formatter={(value) => `$${value.toFixed(2)}`}
+                            contentStyle={{ 
+                              backgroundColor: chartColors.tooltip.bg, 
+                              border: `1px solid ${chartColors.tooltip.border}`,
+                              color: chartColors.tooltip.text
+                            }}
+                          />
+                          <Legend />
+                          <Bar dataKey="value" fill={chartColors.secondary} />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    ) : null}
+                  </div>
+                </div>
               </div>
             </>
           )}

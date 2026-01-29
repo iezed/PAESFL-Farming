@@ -4,12 +4,14 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsive
 import api from '../../utils/api';
 import { useI18n } from '../../i18n/I18nContext';
 import AlertModal from '../AlertModal';
+import { useChartColors } from '../../hooks/useDarkMode';
 
 function Module2Transformation({ user }) {
   const { t } = useI18n();
   const location = useLocation();
   const navigate = useNavigate();
   const scenarioId = location.state?.scenarioId;
+  const chartColors = useChartColors();
 
   const [productionData, setProductionData] = useState({
     daily_production_liters: 0,
@@ -577,6 +579,18 @@ function Module2Transformation({ user }) {
           {t('backToDashboard')}
         </button>
         <h1 style={{ marginTop: '20px' }}>{t('module2Title')}</h1>
+        <div style={{ 
+          marginTop: '16px', 
+          padding: '18px 24px', 
+          background: 'linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%)', 
+          borderRadius: '12px',
+          borderLeft: '4px solid #8e24aa',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.08)'
+        }}>
+          <p style={{ margin: 0, fontSize: '15px', lineHeight: '1.6', color: '#6a1b9a' }}>
+            ℹ️ {t('module2Explanation')}
+          </p>
+        </div>
       </header>
 
       <div className="card">
@@ -1465,7 +1479,7 @@ function Module2Transformation({ user }) {
                             <th>% {t('salesChannels')}</th>
                             <th>{t('kgL')}</th>
                             <th>{t('salesPrice')}</th>
-                            <th>{t('costAverage')}</th>
+                            <th style={{ width: '110px', minWidth: '110px', maxWidth: '110px' }}>{t('costAverage')}</th>
                             <th>{t('marginPerKg')}</th>
                             <th>{t('marginPercent')}</th>
                             <th>{t('totalIncome')}</th>
@@ -1522,7 +1536,7 @@ function Module2Transformation({ user }) {
                                     <td>-</td>
                                     <td>{detail.kg.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
                                     <td style={{ fontWeight: 'bold' }}>${detail.price.toFixed(2)}</td>
-                                    <td>${detail.unitCost.toFixed(2)}</td>
+                                    <td style={{ width: '110px', minWidth: '110px', maxWidth: '110px' }}>${detail.unitCost.toFixed(2)}</td>
                                     <td style={{ 
                                       color: detail.unitMargin >= 0 ? 'green' : 'red',
                                       fontWeight: 'bold',
@@ -1681,18 +1695,25 @@ function Module2Transformation({ user }) {
                       return (
                         <ResponsiveContainer width="100%" height={300}>
                           <BarChart data={chartData}>
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis dataKey="name" />
-                            <YAxis />
-                            <Tooltip formatter={(value) => 
-                              marginViewMode === 'percent' 
-                                ? `${Number(value || 0).toFixed(1)}%`
-                                : `$${Number(value || 0).toLocaleString(undefined)}`
-                            } />
+                            <CartesianGrid strokeDasharray="3 3" stroke={chartColors.grid} />
+                            <XAxis dataKey="name" stroke={chartColors.axis.tick} />
+                            <YAxis stroke={chartColors.axis.tick} />
+                            <Tooltip 
+                              formatter={(value) => 
+                                marginViewMode === 'percent' 
+                                  ? `${Number(value || 0).toFixed(1)}%`
+                                  : `$${Number(value || 0).toLocaleString(undefined)}`
+                              }
+                              contentStyle={{ 
+                                backgroundColor: chartColors.tooltip.bg, 
+                                border: `1px solid ${chartColors.tooltip.border}`,
+                                color: chartColors.tooltip.text
+                              }}
+                            />
                             <Legend />
-                            <Bar dataKey={t('income')} fill="#8884d8" />
-                            <Bar dataKey={t('totalCosts')} fill="#ffc658" />
-                            <Bar dataKey={t('margin')} fill="#82ca9d" />
+                            <Bar dataKey={t('income')} fill={chartColors.primary} />
+                            <Bar dataKey={t('totalCosts')} fill={chartColors.tertiary} />
+                            <Bar dataKey={t('margin')} fill={chartColors.secondary} />
                           </BarChart>
                         </ResponsiveContainer>
                       );
@@ -1723,7 +1744,7 @@ function Module2Transformation({ user }) {
                         { name: t('salesChannelDistributors'), value: totalProductKg > 0 ? (channelData.distributors.kg / totalProductKg) * 100 : 0 },
                         { name: t('salesChannelThird'), value: totalProductKg > 0 ? (channelData.third.kg / totalProductKg) * 100 : 0 },
                       ].filter(item => item.value > 0);
-                      const COLORS = ['#8884d8', '#82ca9d', '#ffc658'];
+                      const COLORS = [chartColors.primary, chartColors.secondary, chartColors.tertiary];
                       return (
                         <ResponsiveContainer width="100%" height={300}>
                           <PieChart>
@@ -1734,14 +1755,21 @@ function Module2Transformation({ user }) {
                               labelLine={false}
                               label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(1)}%`}
                               outerRadius={80}
-                              fill="#8884d8"
+                              fill={chartColors.primary}
                               dataKey="value"
                             >
                               {donutData.map((entry, index) => (
                                 <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                               ))}
                             </Pie>
-                            <Tooltip formatter={(value) => `${value.toFixed(1)}%`} />
+                            <Tooltip 
+                              formatter={(value) => `${value.toFixed(1)}%`}
+                              contentStyle={{ 
+                                backgroundColor: chartColors.tooltip.bg, 
+                                border: `1px solid ${chartColors.tooltip.border}`,
+                                color: chartColors.tooltip.text
+                              }}
+                            />
                             <Legend />
                           </PieChart>
                         </ResponsiveContainer>
@@ -1762,12 +1790,19 @@ function Module2Transformation({ user }) {
                       return (
                         <ResponsiveContainer width="100%" height={300}>
                           <BarChart data={productData}>
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis dataKey="name" />
-                            <YAxis />
-                            <Tooltip formatter={(value) => `${Number(value || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })} kg`} />
+                            <CartesianGrid strokeDasharray="3 3" stroke={chartColors.grid} />
+                            <XAxis dataKey="name" stroke={chartColors.axis.tick} />
+                            <YAxis stroke={chartColors.axis.tick} />
+                            <Tooltip 
+                              formatter={(value) => `${Number(value || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })} kg`}
+                              contentStyle={{ 
+                                backgroundColor: chartColors.tooltip.bg, 
+                                border: `1px solid ${chartColors.tooltip.border}`,
+                                color: chartColors.tooltip.text
+                              }}
+                            />
                             <Legend />
-                            <Bar dataKey="kg" stackId="a" fill="#8884d8" name={t('productMix')} />
+                            <Bar dataKey="kg" stackId="a" fill={chartColors.primary} name={t('productMix')} />
                           </BarChart>
                         </ResponsiveContainer>
                       );
@@ -1789,18 +1824,25 @@ function Module2Transformation({ user }) {
                       return (
                         <ResponsiveContainer width="100%" height={300}>
                           <ComposedChart data={chartData}>
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis dataKey="name" />
-                            <YAxis />
-                            <Tooltip formatter={(value) => 
-                              marginViewMode === 'percent' 
-                                ? `${Number(value || 0).toFixed(1)}%`
-                                : `$${Number(value || 0).toLocaleString(undefined)}`
-                            } />
+                            <CartesianGrid strokeDasharray="3 3" stroke={chartColors.grid} />
+                            <XAxis dataKey="name" stroke={chartColors.axis.tick} />
+                            <YAxis stroke={chartColors.axis.tick} />
+                            <Tooltip 
+                              formatter={(value) => 
+                                marginViewMode === 'percent' 
+                                  ? `${Number(value || 0).toFixed(1)}%`
+                                  : `$${Number(value || 0).toLocaleString(undefined)}`
+                              }
+                              contentStyle={{ 
+                                backgroundColor: chartColors.tooltip.bg, 
+                                border: `1px solid ${chartColors.tooltip.border}`,
+                                color: chartColors.tooltip.text
+                              }}
+                            />
                             <Legend />
-                            <Bar dataKey={t('income')} fill="#8884d8" />
-                            <Bar dataKey={t('totalCosts')} fill="#ffc658" />
-                            <Area type="monotone" dataKey={t('margin')} fill="#82ca9d" stroke="#82ca9d" />
+                            <Bar dataKey={t('income')} fill={chartColors.primary} />
+                            <Bar dataKey={t('totalCosts')} fill={chartColors.tertiary} />
+                            <Area type="monotone" dataKey={t('margin')} fill={chartColors.secondary} stroke={chartColors.secondary} />
                           </ComposedChart>
                         </ResponsiveContainer>
                       );
@@ -1812,6 +1854,212 @@ function Module2Transformation({ user }) {
                   </div>
                 )}
               </div>
+
+              {/* Integrated Dashboard View */}
+              {results && (
+                <div className="card" style={{ marginTop: '2rem' }}>
+                  <h2 className="card-section-title">{t('integratedDashboard') || 'Integrated Dashboard'}</h2>
+                  <p style={{ marginBottom: '2rem', color: 'var(--text-secondary)' }}>
+                    {t('dashboardDescription') || 'Comprehensive view of all metrics and charts for quick decision-making'}
+                  </p>
+                  
+                  {/* Key Metrics Grid */}
+                  <div style={{ 
+                    display: 'grid', 
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', 
+                    gap: '1rem', 
+                    marginBottom: '2rem' 
+                  }}>
+                    <div style={{ 
+                      padding: '1.5rem', 
+                      background: 'var(--bg-secondary)', 
+                      borderRadius: '8px',
+                      border: '1px solid var(--border-color)'
+                    }}>
+                      <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
+                        {t('totalProductKg') || 'Total Product (kg)'}
+                      </div>
+                      <div style={{ fontSize: '1.75rem', fontWeight: '700', color: 'var(--text-primary)' }}>
+                        {Number(results.total_product_kg || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </div>
+                    </div>
+                    <div style={{ 
+                      padding: '1.5rem', 
+                      background: 'var(--bg-secondary)', 
+                      borderRadius: '8px',
+                      border: '1px solid var(--border-color)'
+                    }}>
+                      <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
+                        {t('totalRevenue') || 'Total Revenue'}
+                      </div>
+                      <div style={{ fontSize: '1.75rem', fontWeight: '700', color: 'var(--text-primary)' }}>
+                        ${Number(results.total_income || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </div>
+                    </div>
+                    <div style={{ 
+                      padding: '1.5rem', 
+                      background: 'var(--bg-secondary)', 
+                      borderRadius: '8px',
+                      border: '1px solid var(--border-color)'
+                    }}>
+                      <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
+                        {t('totalCosts') || 'Total Costs'}
+                      </div>
+                      <div style={{ fontSize: '1.75rem', fontWeight: '700', color: 'var(--text-primary)' }}>
+                        ${Number(results.total_costs || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </div>
+                    </div>
+                    <div style={{ 
+                      padding: '1.5rem', 
+                      background: 'var(--bg-secondary)', 
+                      borderRadius: '8px',
+                      border: '1px solid var(--border-color)'
+                    }}>
+                      <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
+                        {t('grossMargin') || 'Gross Margin'}
+                      </div>
+                      <div style={{ fontSize: '1.75rem', fontWeight: '700', color: results.total_margin >= 0 ? 'var(--success-color)' : 'var(--error-color)' }}>
+                        ${Number(results.total_margin || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </div>
+                      <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
+                        {results.margin_percentage?.toFixed(2)}%
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Charts Grid */}
+                  <div style={{ 
+                    display: 'grid', 
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', 
+                    gap: '2rem' 
+                  }}>
+                    {/* Income/Costs/Margin Chart */}
+                    {comparisonData && comparisonData.length > 0 && (
+                      <div>
+                        <h3 style={{ marginBottom: '1rem', fontSize: '1.125rem', fontWeight: '600' }}>
+                          {t('financialOverview') || 'Financial Overview'}
+                        </h3>
+                        <ResponsiveContainer width="100%" height={280}>
+                          <BarChart data={comparisonData}>
+                            <CartesianGrid strokeDasharray="3 3" stroke={chartColors.grid} />
+                            <XAxis dataKey="name" stroke={chartColors.axis.tick} />
+                            <YAxis stroke={chartColors.axis.tick} />
+                            <Tooltip 
+                              formatter={(value) => `$${Number(value || 0).toLocaleString(undefined)}`}
+                              contentStyle={{ 
+                                backgroundColor: chartColors.tooltip.bg, 
+                                border: `1px solid ${chartColors.tooltip.border}`,
+                                color: chartColors.tooltip.text
+                              }}
+                            />
+                            <Legend />
+                            <Bar dataKey={t('income')} fill={chartColors.primary} />
+                            <Bar dataKey={t('totalCosts')} fill={chartColors.tertiary} />
+                            <Bar dataKey={t('margin')} fill={chartColors.secondary} />
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </div>
+                    )}
+
+                    {/* Product Mix Chart */}
+                    {results.productsBreakdown && results.productsBreakdown.length > 0 && (() => {
+                      const totalLiters = results.productsBreakdown.reduce((sum, p) => sum + (p.productLiters || 0), 0);
+                      const productData = results.productsBreakdown.map(product => {
+                        const distributionPct = product.distribution_percentage || 0;
+                        const litersPerKg = product.litersPerKg || 1;
+                        const productLiters = totalLiters * (distributionPct / 100);
+                        const productKg = productLiters / litersPerKg;
+                        return {
+                          name: product.product_type_custom || t(`productTypes.${product.product_type}`) || product.product_type,
+                          kg: productKg,
+                        };
+                      });
+                      return (
+                        <div>
+                          <h3 style={{ marginBottom: '1rem', fontSize: '1.125rem', fontWeight: '600' }}>
+                            {t('productMix') || 'Product Mix'}
+                          </h3>
+                          <ResponsiveContainer width="100%" height={280}>
+                            <BarChart data={productData}>
+                              <CartesianGrid strokeDasharray="3 3" stroke={chartColors.grid} />
+                              <XAxis dataKey="name" stroke={chartColors.axis.tick} />
+                              <YAxis stroke={chartColors.axis.tick} />
+                              <Tooltip 
+                                formatter={(value) => `${Number(value || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })} kg`}
+                                contentStyle={{ 
+                                  backgroundColor: chartColors.tooltip.bg, 
+                                  border: `1px solid ${chartColors.tooltip.border}`,
+                                  color: chartColors.tooltip.text
+                                }}
+                              />
+                              <Legend />
+                              <Bar dataKey="kg" fill={chartColors.primary} name={t('productMix')} />
+                            </BarChart>
+                          </ResponsiveContainer>
+                        </div>
+                      );
+                    })()}
+
+                    {/* Channel Mix Chart */}
+                    {results.productsBreakdown && results.productsBreakdown.length > 0 && (() => {
+                      const channelData = {
+                        direct: { kg: 0 },
+                        distributors: { kg: 0 },
+                        third: { kg: 0 }
+                      };
+                      let totalProductKg = 0;
+                      results.productsBreakdown.forEach(product => {
+                        if (product.salesChannels && product.productKg) {
+                          channelData.direct.kg += product.salesChannels.direct?.kg || 0;
+                          channelData.distributors.kg += product.salesChannels.distributors?.kg || 0;
+                          channelData.third.kg += product.salesChannels.third?.kg || 0;
+                          totalProductKg += product.productKg;
+                        }
+                      });
+                      const donutData = [
+                        { name: t('salesChannelDirect'), value: totalProductKg > 0 ? (channelData.direct.kg / totalProductKg) * 100 : 0 },
+                        { name: t('salesChannelDistributors'), value: totalProductKg > 0 ? (channelData.distributors.kg / totalProductKg) * 100 : 0 },
+                        { name: t('salesChannelThird'), value: totalProductKg > 0 ? (channelData.third.kg / totalProductKg) * 100 : 0 },
+                      ].filter(item => item.value > 0);
+                      const COLORS = [chartColors.primary, chartColors.secondary, chartColors.tertiary];
+                      return donutData.length > 0 ? (
+                        <div>
+                          <h3 style={{ marginBottom: '1rem', fontSize: '1.125rem', fontWeight: '600' }}>
+                            {t('channelMix') || 'Sales Channel Mix'}
+                          </h3>
+                          <ResponsiveContainer width="100%" height={280}>
+                            <PieChart>
+                              <Pie
+                                data={donutData}
+                                cx="50%"
+                                cy="50%"
+                                labelLine={false}
+                                label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(1)}%`}
+                                outerRadius={90}
+                                fill={chartColors.primary}
+                                dataKey="value"
+                              >
+                                {donutData.map((entry, index) => (
+                                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                ))}
+                              </Pie>
+                              <Tooltip 
+                                formatter={(value) => `${value.toFixed(1)}%`}
+                                contentStyle={{ 
+                                  backgroundColor: chartColors.tooltip.bg, 
+                                  border: `1px solid ${chartColors.tooltip.border}`,
+                                  color: chartColors.tooltip.text
+                                }}
+                              />
+                              <Legend />
+                            </PieChart>
+                          </ResponsiveContainer>
+                        </div>
+                      ) : null;
+                    })()}
+                  </div>
+                </div>
+              )}
             </>
           )}
         </>

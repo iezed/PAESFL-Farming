@@ -4,12 +4,14 @@ import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, L
 import api from '../../utils/api';
 import { useI18n } from '../../i18n/I18nContext';
 import AlertModal from '../AlertModal';
+import { useChartColors } from '../../hooks/useDarkMode';
 
 function Module4Yield({ user }) {
   const { t } = useI18n();
   const location = useLocation();
   const navigate = useNavigate();
   const scenarioId = location.state?.scenarioId;
+  const chartColors = useChartColors();
 
   const [productionData, setProductionData] = useState({
     daily_production_liters: 0,
@@ -377,24 +379,38 @@ function Module4Yield({ user }) {
                 <h3 style={{ marginBottom: '15px' }}>{t('milkToProductConversion')}</h3>
                 <ResponsiveContainer width="100%" height={300}>
                   <BarChart data={conversionData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" />
-                    <YAxis />
-                    <Tooltip formatter={(value) => Number(value || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })} />
+                    <CartesianGrid strokeDasharray="3 3" stroke={chartColors.grid} />
+                    <XAxis dataKey="name" stroke={chartColors.axis.tick} />
+                    <YAxis stroke={chartColors.axis.tick} />
+                    <Tooltip 
+                      formatter={(value) => Number(value || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}
+                      contentStyle={{ 
+                        backgroundColor: chartColors.tooltip.bg, 
+                        border: `1px solid ${chartColors.tooltip.border}`,
+                        color: chartColors.tooltip.text
+                      }}
+                    />
                     <Legend />
-                    <Bar dataKey="value" fill="#8884d8" />
+                    <Bar dataKey="value" fill={chartColors.primary} />
                   </BarChart>
                 </ResponsiveContainer>
 
                 <h3 style={{ marginTop: '30px', marginBottom: '15px' }}>{t('efficiencyAndConversion')}</h3>
                 <ResponsiveContainer width="100%" height={300}>
                   <BarChart data={efficiencyData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" />
-                    <YAxis />
-                    <Tooltip formatter={(value) => `${value.toFixed(2)}%`} />
+                    <CartesianGrid strokeDasharray="3 3" stroke={chartColors.grid} />
+                    <XAxis dataKey="name" stroke={chartColors.axis.tick} />
+                    <YAxis stroke={chartColors.axis.tick} />
+                    <Tooltip 
+                      formatter={(value) => `${value.toFixed(2)}%`}
+                      contentStyle={{ 
+                        backgroundColor: chartColors.tooltip.bg, 
+                        border: `1px solid ${chartColors.tooltip.border}`,
+                        color: chartColors.tooltip.text
+                      }}
+                    />
                     <Legend />
-                    <Bar dataKey="value" fill="#82ca9d" />
+                    <Bar dataKey="value" fill={chartColors.secondary} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
