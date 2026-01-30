@@ -32,7 +32,7 @@
         "fat_plus_protein_kg": 457.5,
         "ecm_kg": 7034.0
       },
-      "validation_source": "NL"
+      "validation_source": "CRV/NRS/ZuivelNL/WUR"
     },
     {
       "rank_ecm_lifetime": 2,
@@ -54,11 +54,11 @@
         "fat_plus_protein_kg": 415.0,
         "ecm_kg": 7018.5
       },
-      "validation_source": "ADGA"
+      "validation_source": "ADGA/DHI/USDA"
     },
     {
       "rank_ecm_lifetime": 3,
-      "breed": "Alpina Americana (ADGA)",
+      "breed": "Alpina Americana",
       "milk_per_lactation_kg": 1150.0,
       "lactation_days_avg": 305,
       "fat_pct": 3.55,
@@ -76,7 +76,7 @@
         "fat_plus_protein_kg": 370.0,
         "ecm_kg": 6524.5
       },
-      "validation_source": "ADGA"
+      "validation_source": "ADGA/DHI/USDA"
     },
     {
       "rank_ecm_lifetime": 4,
@@ -142,7 +142,7 @@
         "fat_plus_protein_kg": 350.5,
         "ecm_kg": 5778.5
       },
-      "validation_source": "ADGA"
+      "validation_source": "ADGA/DHI/USDA"
     },
     {
       "rank_ecm_lifetime": 7,
@@ -168,7 +168,7 @@
     },
     {
       "rank_ecm_lifetime": 8,
-      "breed": "Alpina (genérica/mundo)",
+      "breed": "Alpina (genérica)",
       "milk_per_lactation_kg": 900.0,
       "lactation_days_avg": 270,
       "fat_pct": 3.6,
@@ -186,11 +186,11 @@
         "fat_plus_protein_kg": 301.5,
         "ecm_kg": 5203.5
       },
-      "validation_source": "EU/Américas"
+      "validation_source": "ICAR / FAO-DAD-IS /AEA"
     },
     {
       "rank_ecm_lifetime": 9,
-      "breed": "Saanen (mundo)",
+      "breed": "Saanen (genérica)",
       "milk_per_lactation_kg": 900.0,
       "lactation_days_avg": 280,
       "fat_pct": 3.3,
@@ -208,11 +208,11 @@
         "fat_plus_protein_kg": 283.5,
         "ecm_kg": 5013.0
       },
-      "validation_source": "Asociaciones"
+      "validation_source": "ICAR / FAO-DAD-IS /AEA"
     },
     {
       "rank_ecm_lifetime": 10,
-      "breed": "Toggenburg",
+      "breed": "Toggenburg Americana",
       "milk_per_lactation_kg": 870.0,
       "lactation_days_avg": 305,
       "fat_pct": 3.29,
@@ -230,7 +230,7 @@
         "fat_plus_protein_kg": 267.0,
         "ecm_kg": 4736.5
       },
-      "validation_source": "ADGA"
+      "validation_source": "ADGA/DHI/USDA"
     },
     {
       "rank_ecm_lifetime": 11,
@@ -252,7 +252,7 @@
         "fat_plus_protein_kg": 265.5,
         "ecm_kg": 4200.0
       },
-      "validation_source": "ADGA"
+      "validation_source": "ADGA/DHI/USDA"
     },
     {
       "rank_ecm_lifetime": 12,
@@ -296,7 +296,7 @@
         "fat_plus_protein_kg": 248.5,
         "ecm_kg": 3906.5
       },
-      "validation_source": "Francia"
+      "validation_source": "INRAE/FGÉ/Capgenes"
     },
     {
       "rank_ecm_lifetime": 14,
@@ -318,7 +318,7 @@
         "fat_plus_protein_kg": 286.0,
         "ecm_kg": 3894.6
       },
-      "validation_source": "Córdoba"
+      "validation_source": "CAPRIGRAN / ACRIMUR / UC"
     },
     {
       "rank_ecm_lifetime": 15,
@@ -362,7 +362,7 @@
         "fat_plus_protein_kg": 240.0,
         "ecm_kg": 3781.5
       },
-      "validation_source": "ADGA"
+      "validation_source": "ADGA/DHI/USDA"
     },
     {
       "rank_ecm_lifetime": 17,
@@ -384,7 +384,7 @@
         "fat_plus_protein_kg": 227.7,
         "ecm_kg": 3456.0
       },
-      "validation_source": "ADGA"
+      "validation_source": "ADGA/DHI/USDA"
     },
     {
       "rank_ecm_lifetime": 18,
@@ -428,7 +428,7 @@
         "fat_plus_protein_kg": 208.8,
         "ecm_kg": 2904.0
       },
-      "validation_source": "España"
+      "validation_source": "PAMG / MAPA"
     },
     {
       "rank_ecm_lifetime": 20,
@@ -450,11 +450,11 @@
         "fat_plus_protein_kg": 101.2,
         "ecm_kg": 1607.7
       },
-      "validation_source": "ADGA"
+      "validation_source": "ADGA/DHI/USDA"
     },
     {
       "rank_ecm_lifetime": 21,
-      "breed": "Mestiza (mundo)",
+      "breed": "Mestiza (genérica)",
       "milk_per_lactation_kg": 200.0,
       "lactation_days_avg": 160,
       "fat_pct": 4.5,
@@ -472,7 +472,7 @@
         "fat_plus_protein_kg": 96.0,
         "ecm_kg": 1447.8
       },
-      "validation_source": "LATAM"
+      "validation_source": "ICAR / FAO-DAD-IS / D LATAM"
     },
     {
       "rank_ecm_lifetime": 22,
@@ -520,7 +520,7 @@
     },
     {
       "rank_ecm_lifetime": 24,
-      "breed": "Criolla (mundo)",
+      "breed": "Criolla (genérica)",
       "milk_per_lactation_kg": 100.0,
       "lactation_days_avg": 140,
       "fat_pct": 5.0,

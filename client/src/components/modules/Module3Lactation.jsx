@@ -91,13 +91,12 @@ function Module3Lactation({ user }) {
       const response = await api.get('/module3/breeds');
       setBreeds(response.data.breeds || []);
       
-      // Auto-load ranking on first load
+      // Auto-load ranking on first load (ALL breeds, not just top 10)
       if (response.data.breeds && response.data.breeds.length > 0) {
-        const topBreeds = response.data.breeds.slice(0, 10);
         setRankingResults({
           mode: 'per_head',
-          count: topBreeds.length,
-          scenarios: topBreeds
+          count: response.data.breeds.length,
+          scenarios: response.data.breeds
         });
       }
     } catch (error) {
@@ -871,7 +870,7 @@ function Module3Lactation({ user }) {
                   ECM (ECM) Vida productiva (kg + Litros)
                 </p>
                 <div className="breed-ranking-list">
-                  {rankingResults.scenarios.slice(0, 7).map((breed, index) => {
+                  {rankingResults.scenarios.map((breed, index) => {
                     return (
                       <div key={breed.breed_key || index} className="breed-ranking-item">
                         <div className="breed-image-container">
@@ -913,16 +912,6 @@ function Module3Lactation({ user }) {
                     );
                   })}
                 </div>
-                {rankingResults.scenarios.length > 7 && (
-                  <div className="breed-see-more">
-                    <button className="breed-see-more-btn" onClick={() => {
-                      // Scroll to table
-                      document.querySelector('.table-container')?.scrollIntoView({ behavior: 'smooth' });
-                    }}>
-                      {t('seeMore') || 'Ver Más'} ➕
-                    </button>
-                  </div>
-                )}
               </div>
 
               <div className="table-container" style={{ overflowX: 'auto', marginBottom: '30px' }}>
@@ -960,13 +949,14 @@ function Module3Lactation({ user }) {
                 </table>
               </div>
 
-              {/* Ranking Chart */}
-              <ResponsiveContainer width="100%" height={400}>
-                <BarChart data={rankingResults.scenarios.slice(0, 10)} layout="horizontal">
+              {/* Ranking Chart - Show ALL breeds */}
+              <ResponsiveContainer width="100%" height={Math.max(400, rankingResults.scenarios.length * 30)}>
+                <BarChart data={rankingResults.scenarios} layout="horizontal">
                   <CartesianGrid strokeDasharray="3 3" stroke={chartColors.grid} />
                   <XAxis type="number" stroke={chartColors.axis.tick} />
                   <YAxis dataKey="breed_name" type="category" width={150} stroke={chartColors.axis.tick} />
                   <Tooltip 
+                    formatter={(value) => `${formatNumber(value, 0)} kg`}
                     contentStyle={{ 
                       backgroundColor: chartColors.tooltip.bg, 
                       border: `1px solid ${chartColors.tooltip.border}`,
@@ -1103,36 +1093,124 @@ function Module3Lactation({ user }) {
                 </>
               )}
 
-              {rankingResults && (
+              {rankingResults && rankingResults.scenarios.length > 0 && (
                 <>
                   <h3 style={{ marginTop: '2rem', marginBottom: '1rem', fontSize: '1.25rem', fontWeight: '600' }}>
-                    {t('topBreeds') || 'Top Performing Breeds'}
+                    {t('bestProducer') || 'Mejor Productora - Visualización'}
                   </h3>
-                  <div style={{ 
-                    display: 'grid', 
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', 
-                    gap: '1rem', 
-                    marginBottom: '2rem' 
-                  }}>
-                    {rankingResults.scenarios.slice(0, 3).map((breed, index) => (
-                      <div key={index} style={{ 
-                        padding: '1.5rem', 
-                        background: 'var(--bg-secondary)', 
-                        borderRadius: '8px',
-                        border: '1px solid var(--border-color)'
-                      }}>
-                        <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
-                          #{index + 1} - {breed.breed_name}
-                        </div>
-                        <div style={{ fontSize: '1.75rem', fontWeight: '700', color: 'var(--text-primary)' }}>
-                          {formatNumber(breed.ecm_kg_lifetime, 2)}
-                        </div>
-                        <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
-                          {t('ecmProductiveLife') || 'ECM Productive Life (kg)'}
+                  <p style={{ marginBottom: '1.5rem', color: 'var(--text-secondary)', fontSize: '0.9375rem' }}>
+                    {t('bestProducerDescription') || 'Gráfico de líneas mostrando la mejor productora y comparación con otras razas'}
+                  </p>
+                  
+                  {/* Line Chart for Best Producer */}
+                  <div className="card" style={{ marginBottom: '2rem' }}>
+                    <h4 style={{ marginBottom: '1rem', fontSize: '1.125rem', fontWeight: '600' }}>
+                      {t('ecmProductionOverLifetime') || 'Producción ECM a lo largo de la vida productiva'}
+                    </h4>
+                    <ResponsiveContainer width="100%" height={350}>
+                      <LineChart data={rankingResults.scenarios.slice(0, 10).map((breed, idx) => ({
+                        rank: idx + 1,
+                        breed: breed.breed_name,
+                        ecm: breed.ecm_kg_lifetime,
+                        milk: breed.milk_kg_yr * breed.lactations_lifetime_avg,
+                        fat: breed.fat_kg_yr * breed.lactations_lifetime_avg,
+                        protein: breed.protein_kg_yr * breed.lactations_lifetime_avg
+                      }))}>
+                        <CartesianGrid strokeDasharray="3 3" stroke={chartColors.grid} />
+                        <XAxis 
+                          dataKey="breed" 
+                          stroke={chartColors.axis.tick}
+                          angle={-45}
+                          textAnchor="end"
+                          height={100}
+                        />
+                        <YAxis stroke={chartColors.axis.tick} />
+                        <Tooltip 
+                          formatter={(value, name) => {
+                            const labels = {
+                              ecm: 'ECM (kg)',
+                              milk: 'Leche (kg)',
+                              fat: 'Grasa (kg)',
+                              protein: 'Proteína (kg)'
+                            };
+                            return [`${formatNumber(value, 0)}`, labels[name] || name];
+                          }}
+                          contentStyle={{ 
+                            backgroundColor: chartColors.tooltip.bg, 
+                            border: `1px solid ${chartColors.tooltip.border}`,
+                            color: chartColors.tooltip.text
+                          }} 
+                        />
+                        <Legend />
+                        <Line 
+                          type="monotone" 
+                          dataKey="ecm" 
+                          stroke={chartColors.primary} 
+                          strokeWidth={3}
+                          dot={{ r: 5 }}
+                          name="ECM Vida Productiva (kg)"
+                        />
+                        <Line 
+                          type="monotone" 
+                          dataKey="milk" 
+                          stroke={chartColors.secondary} 
+                          strokeWidth={2}
+                          strokeDasharray="5 5"
+                          dot={{ r: 4 }}
+                          name="Leche Total (kg)"
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+
+                  {/* Best Producer Highlight */}
+                  {rankingResults.scenarios[0] && (
+                    <div style={{ 
+                      padding: '1.5rem', 
+                      background: 'linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%)', 
+                      borderRadius: '8px',
+                      border: '2px solid #4caf50',
+                      marginBottom: '2rem'
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
+                        <span style={{ fontSize: '2rem' }}>🥇</span>
+                        <div>
+                          <h4 style={{ margin: 0, fontSize: '1.25rem', fontWeight: '700', color: '#2e7d32' }}>
+                            {t('bestProducer') || 'Mejor Productora'}: {rankingResults.scenarios[0].breed_name}
+                          </h4>
+                          <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.875rem', color: '#388e3c' }}>
+                            {rankingResults.scenarios[0].country_or_system || rankingResults.scenarios[0].validation_source}
+                          </p>
                         </div>
                       </div>
-                    ))}
-                  </div>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '1rem' }}>
+                        <div>
+                          <div style={{ fontSize: '0.875rem', color: '#2e7d32', marginBottom: '0.25rem' }}>
+                            {t('ecmProductiveLife') || 'ECM Vida Productiva'}
+                          </div>
+                          <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#1b5e20' }}>
+                            {formatNumber(rankingResults.scenarios[0].ecm_kg_lifetime, 0)} kg
+                          </div>
+                        </div>
+                        <div>
+                          <div style={{ fontSize: '0.875rem', color: '#2e7d32', marginBottom: '0.25rem' }}>
+                            {t('milkKgPerYear') || 'Leche (kg/año)'}
+                          </div>
+                          <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#1b5e20' }}>
+                            {formatNumber(rankingResults.scenarios[0].milk_kg_yr, 0)} kg
+                          </div>
+                        </div>
+                        <div>
+                          <div style={{ fontSize: '0.875rem', color: '#2e7d32', marginBottom: '0.25rem' }}>
+                            {t('lactationsPerLife') || 'Lactancias'}
+                          </div>
+                          <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#1b5e20' }}>
+                            {formatNumber(rankingResults.scenarios[0].lactations_lifetime_avg, 1)}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </>
               )}
             </div>
