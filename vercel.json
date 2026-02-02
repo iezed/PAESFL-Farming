@@ -1,7 +1,8 @@
 {
   "version": 2,
-  "buildCommand": "npm install && cd server && npm install && cd ../client && npm install --include=dev && npm run build",
+  "buildCommand": "cd client && npm install && npm run build",
   "outputDirectory": "client/dist",
+  "installCommand": "npm install --prefix=./api && npm install --prefix=./client",
   "functions": {
     "api/index.js": {
       "includeFiles": "server/**"
