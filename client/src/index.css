@@ -15,11 +15,11 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background: linear-gradient(135deg, #f0f5ec 0%, #d4e4c4 100%);
-  background-attachment: fixed;
-  color: #333;
-  font-size: 16px;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-size: 18px;
   line-height: 1.6;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 code {
@@ -65,7 +65,7 @@ code {
 .card-form .form-title {
   color: white;
   margin-bottom: 24px;
-  font-size: 24px;
+  font-size: 28px;
   font-weight: 700;
 }
 
@@ -116,11 +116,11 @@ code {
 }
 
 .btn {
-  padding: 12px 24px;
+  padding: 14px 28px;
   border: none;
   border-radius: 8px;
   cursor: pointer;
-  font-size: 14px;
+  font-size: 18px;
   font-weight: 500;
   transition: all 0.2s ease;
   display: inline-flex;
@@ -171,8 +171,8 @@ code {
 }
 
 .btn-sm {
-  padding: 8px 16px;
-  font-size: 13px;
+  padding: 10px 20px;
+  font-size: 16px;
 }
 
 .btn-icon {
@@ -186,10 +186,10 @@ code {
 
 input, select, textarea {
   width: 100%;
-  padding: 12px 16px;
+  padding: 14px 18px;
   border: 2px solid #e0e0e0;
   border-radius: 8px;
-  font-size: 14px;
+  font-size: 17px;
   margin-bottom: 10px;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   background-color: #fff;
@@ -256,10 +256,10 @@ select option:focus {
 
 .form-input, .form-select {
   width: 100%;
-  padding: 12px 16px;
+  padding: 14px 18px;
   border: 2px solid #e0e0e0;
   border-radius: 8px;
-  font-size: 14px;
+  font-size: 17px;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   font-family: inherit;
   color: #2d3748;
@@ -300,7 +300,7 @@ label {
   display: block;
   margin-bottom: 8px;
   font-weight: 600;
-  font-size: 15px;
+  font-size: 17px;
   color: #2d3748;
 }
 
@@ -316,9 +316,10 @@ label {
 
 .table th,
 .table td {
-  padding: 12px;
+  padding: 14px;
   text-align: left;
   border-bottom: 1px solid #ddd;
+  font-size: 17px;
 }
 
 .table th {
@@ -496,14 +497,14 @@ label {
 }
 
 .login-card-title {
-  font-size: 28px;
+  font-size: 32px;
   font-weight: 700;
   color: #2d3748;
   margin: 0 0 8px 0;
 }
 
 .login-card-subtitle {
-  font-size: 15px;
+  font-size: 18px;
   color: #718096;
   margin: 0;
 }
@@ -536,15 +537,15 @@ label {
   margin-bottom: 8px;
   font-weight: 600;
   color: #2d3748;
-  font-size: 14px;
+  font-size: 17px;
 }
 
 .login-form input {
   width: 100%;
-  padding: 14px 16px;
+  padding: 16px 18px;
   border: 2px solid #e2e8f0;
   border-radius: 8px;
-  font-size: 15px;
+  font-size: 18px;
   transition: all 0.2s;
   background-color: #fff;
 }
@@ -563,8 +564,8 @@ label {
 
 .login-submit-btn {
   width: 100%;
-  padding: 14px 24px;
-  font-size: 16px;
+  padding: 16px 28px;
+  font-size: 19px;
   font-weight: 600;
   margin-top: 8px;
   margin-bottom: 0;
@@ -676,7 +677,7 @@ label {
   overflow-x: hidden;
   padding: 32px 40px;
   min-height: 0;
-  background: linear-gradient(135deg, #f0f5ec 0%, #d4e4c4 100%);
+  background: var(--bg-gradient);
 }
 
 /* Custom scrollbar for main content */
@@ -733,7 +734,7 @@ label {
   overflow-x: hidden;
   padding: 32px 40px;
   min-height: 0;
-  background: linear-gradient(135deg, #f0f5ec 0%, #d4e4c4 100%);
+  background: var(--bg-gradient);
 }
 
 .site-wrapper.without-sidebar .site-footer {
@@ -827,7 +828,7 @@ label {
   font-weight: 500;
   transition: all 0.2s;
   margin-bottom: 4px;
-  font-size: 14px;
+  font-size: 17px;
 }
 
 .sidebar-nav-link:hover {
@@ -855,7 +856,7 @@ label {
 }
 
 .nav-text {
-  font-size: 15px;
+  font-size: 17px;
   font-weight: 500;
 }
 
@@ -1354,7 +1355,7 @@ label {
 }
 
 .card-section-title {
-  font-size: 22px;
+  font-size: 26px;
   font-weight: 700;
   color: #2d3748;
   margin: 0 0 24px 0;
@@ -1459,7 +1460,7 @@ label {
 
 .footer-text {
   margin: 0;
-  font-size: 14px;
+  font-size: 17px;
   color: #718096;
 }
 
@@ -1472,7 +1473,7 @@ label {
 .footer-link {
   color: #2d5016;
   text-decoration: none;
-  font-size: 14px;
+  font-size: 17px;
   font-weight: 500;
   transition: color 0.2s;
 }
@@ -1558,7 +1559,7 @@ label {
 }
 
 .page-title {
-  font-size: 2.5rem;
+  font-size: 3rem;
   font-weight: 800;
   color: #1a3d0f;
   margin: 0 0 12px 0;
@@ -1568,7 +1569,7 @@ label {
 
 .page-subtitle {
   color: #718096;
-  font-size: 17px;
+  font-size: 20px;
   margin: 0;
   font-weight: 500;
   line-height: 1.5;
@@ -1608,10 +1609,10 @@ label {
 
 .search-input {
   width: 100%;
-  padding: 14px 16px 14px 44px;
+  padding: 16px 18px 16px 48px;
   border: 2px solid #e2e8f0;
   border-radius: 10px;
-  font-size: 15px;
+  font-size: 18px;
   transition: all 0.2s;
   background-color: #f8f9fa;
 }
@@ -1629,11 +1630,11 @@ label {
 }
 
 .filter-select {
-  padding: 14px 18px;
-  padding-right: 44px;
+  padding: 16px 20px;
+  padding-right: 48px;
   border: 2px solid #e2e8f0;
   border-radius: 10px;
-  font-size: 15px;
+  font-size: 18px;
   background-color: #f8f9fa;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='10' viewBox='0 0 14 10'%3E%3Cpath fill='%232d5016' d='M7 10L0 0h14z'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
@@ -1885,7 +1886,7 @@ label {
 }
 
 .scenario-name {
-  font-size: 19px;
+  font-size: 22px;
   font-weight: 700;
   color: #1a3d0f;
   margin: 0 0 10px 0;
@@ -1921,13 +1922,13 @@ label {
 }
 
 .meta-label {
-  font-size: 13px;
+  font-size: 16px;
   color: #718096;
   font-weight: 500;
 }
 
 .meta-value {
-  font-size: 14px;
+  font-size: 17px;
   color: #2d3748;
   font-weight: 600;
 }
@@ -1989,7 +1990,7 @@ label {
 }
 
 .form-title {
-  font-size: 20px;
+  font-size: 24px;
   font-weight: 600;
   margin: 0 0 20px 0;
   color: #2d3748;
@@ -2333,7 +2334,8 @@ label {
      ============================================ */
   
   /* Backgrounds */
-  --bg-primary: #f8f9fa;
+  --bg-primary: #f0f5ec;
+  --bg-gradient: linear-gradient(135deg, #f0f5ec 0%, #d4e4c4 100%);
   --bg-secondary: #ffffff;
   --bg-tertiary: #f1f3f5;
   --bg-quaternary: #e9ecef;
@@ -2399,14 +2401,15 @@ label {
   
   /* Backgrounds */
   --bg-primary: #0f1419;
+  --bg-gradient: linear-gradient(135deg, #0f1419 0%, #1a1f2e 100%);
   --bg-secondary: #1a1f2e;
   --bg-tertiary: #252b3a;
   --bg-quaternary: #2d3443;
   
   /* Text */
-  --text-primary: #e8ecf0;
-  --text-secondary: #b4bcc8;
-  --text-tertiary: #7a8494;
+  --text-primary: #f4f6f8;
+  --text-secondary: #cbd5e0;
+  --text-tertiary: #9ca3af;
   --text-inverse: #0f1419;
   
   /* Semantic Accents */
@@ -2414,8 +2417,8 @@ label {
   --accent-success-hover: #16a34a;
   --accent-info: #3b82f6;
   --accent-info-hover: #2563eb;
-  --accent-warning: #eab308;
-  --accent-warning-hover: #ca8a04;
+  --accent-warning: #fbbf24;
+  --accent-warning-hover: #f59e0b;
   --accent-error: #ef4444;
   --accent-error-hover: #dc2626;
   
@@ -2457,17 +2460,9 @@ label {
   --footer-bg: #1a1f2e;
 }
 
-/* Apply dark mode to body */
+/* Apply dark mode gradient override */
 .dark-mode body {
-  background: var(--bg-primary);
-  color: var(--text-primary);
-}
-
-/* Light mode body */
-body {
-  background: var(--bg-primary);
-  color: var(--text-primary);
-  transition: background-color 0.2s ease, color 0.2s ease;
+  background: var(--bg-gradient);
 }
 
 /* Cards */
@@ -2478,10 +2473,14 @@ body {
   color: var(--text-primary);
 }
 
+.dark-mode .card * {
+  color: var(--text-primary);
+}
+
 .dark-mode .card:hover {
   box-shadow: 0 6px 20px var(--shadow-hover);
   border-color: var(--border-light);
-  background: var(--bg-tertiary);
+  background: var(--bg-secondary);
 }
 
 .dark-mode .card-form {
@@ -2578,16 +2577,16 @@ body {
 
 /* Main content */
 .dark-mode .site-main {
-  background: var(--bg-primary);
+  background: var(--bg-gradient);
   color: var(--text-primary);
 }
 
 .dark-mode .site-wrapper.with-sidebar .site-main {
-  background: var(--bg-primary);
+  background: var(--bg-gradient);
 }
 
 .dark-mode .site-wrapper.without-sidebar .site-main {
-  background: var(--bg-primary);
+  background: var(--bg-gradient);
 }
 
 /* Footer */
@@ -3246,6 +3245,34 @@ body {
 .dark-mode label {
   color: var(--text-secondary);
   font-weight: 500;
+}
+
+/* General text improvements for dark mode */
+.dark-mode h1,
+.dark-mode h2,
+.dark-mode h3,
+.dark-mode h4,
+.dark-mode h5,
+.dark-mode h6 {
+  color: var(--text-primary);
+}
+
+.dark-mode p {
+  color: var(--text-primary);
+}
+
+.dark-mode strong,
+.dark-mode b {
+  color: var(--text-primary);
+}
+
+.dark-mode small {
+  color: var(--text-secondary);
+}
+
+.dark-mode td,
+.dark-mode th {
+  color: var(--text-primary);
 }
 
 /* Table container dark mode */

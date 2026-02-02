@@ -864,7 +864,7 @@ function Module2Transformation({ user }) {
                         </select>
                       </div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
-                        <label style={{ fontSize: '0.85em', color: '#666', fontWeight: '500' }}>
+                        <label style={{ fontSize: '0.85em', color: 'var(--text-secondary)', fontWeight: '500' }}>
                           Costo {product.processing_cost_unit === 'liter' ? 'por litro' : 'por kg'}:
                         </label>
                         <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
@@ -941,7 +941,7 @@ function Module2Transformation({ user }) {
                         </select>
                       </div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
-                        <label style={{ fontSize: '0.85em', color: '#666', fontWeight: '500' }}>
+                        <label style={{ fontSize: '0.85em', color: 'var(--text-secondary)', fontWeight: '500' }}>
                           Costo {product.packaging_cost_unit === 'liter' ? 'por litro' : 'por kg'}:
                         </label>
                         <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
@@ -1265,7 +1265,7 @@ function Module2Transformation({ user }) {
                           <div style={{ marginTop: '15px', padding: '12px', background: 'var(--bg-tertiary)', borderRadius: '6px', fontSize: '0.9em' }}>
                             <strong>{t('weightedAverageCostPerKg')}</strong>: ${averageCostPerKg.toFixed(2)} / kg
                             <br />
-                            <small style={{ color: '#666' }}>{t('note')}: {t('weightedAverageCostPerKg')}</small>
+                            <small style={{ color: 'var(--text-secondary)' }}>{t('note')}: {t('weightedAverageCostPerKg')}</small>
                           </div>
                         </div>
                       )}
@@ -1519,7 +1519,7 @@ function Module2Transformation({ user }) {
                                   <td><strong>{channel.name}</strong></td>
                                   <td>{channel.percentage.toFixed(1)}%</td>
                                   <td>{channel.kg.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
-                                  <td colSpan="5" style={{ fontStyle: 'italic', color: '#666' }}>
+                                  <td colSpan="5" style={{ fontStyle: 'italic', color: 'var(--text-secondary)' }}>
                                     {productDetails.length > 1 ? t('clickToSeeProductDetails') : t('seeProductDetailsBelow')}
                                   </td>
                                 </tr>
@@ -1560,24 +1560,24 @@ function Module2Transformation({ user }) {
                                     fontSize: '0.95em'
                                   }}>
                                     <td></td>
-                                    <td style={{ paddingLeft: '30px', color: '#666' }}>
+                                    <td style={{ paddingLeft: '30px', color: 'var(--text-secondary)' }}>
                                       <small>📊 {t('weightedAverageMix')}</small>
                                     </td>
                                     <td>-</td>
                                     <td><small>{channel.kg.toLocaleString(undefined, { maximumFractionDigits: 2 })}</small></td>
-                                    <td style={{ color: '#666' }}>
+                                    <td style={{ color: 'var(--text-secondary)' }}>
                                       <small>${channel.price > 0 ? channel.price.toFixed(2) : '0.00'}</small>
                                     </td>
-                                    <td style={{ color: '#666' }}>
+                                    <td style={{ color: 'var(--text-secondary)' }}>
                                       <small>${averageCostPerKg.toFixed(2)}</small>
                                     </td>
-                                    <td style={{ color: '#666' }}>
+                                    <td style={{ color: 'var(--text-secondary)' }}>
                                       <small>${margin.toFixed(2)}</small>
                                     </td>
-                                    <td style={{ color: '#666' }}>
+                                    <td style={{ color: 'var(--text-secondary)' }}>
                                       <small>{marginPercent.toFixed(1)}%</small>
                                     </td>
-                                    <td style={{ color: '#666' }}>
+                                    <td style={{ color: 'var(--text-secondary)' }}>
                                       <small>${channel.revenue.toLocaleString(undefined, { maximumFractionDigits: 2 })}</small>
                                     </td>
                                   </tr>
@@ -1589,7 +1589,7 @@ function Module2Transformation({ user }) {
                             <td colSpan="2"><strong>{t('total')}</strong></td>
                             <td>100%</td>
                             <td>{totalProductKg.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
-                            <td colSpan="4" style={{ color: '#666', fontStyle: 'italic', fontSize: '0.9em' }}>
+                            <td colSpan="4" style={{ color: 'var(--text-secondary)', fontStyle: 'italic', fontSize: '0.9em' }}>
                               {t('totalAcrossAllChannels')}
                             </td>
                             <td>${(channels[0].revenue + channels[1].revenue + channels[2].revenue).toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
@@ -1604,11 +1604,11 @@ function Module2Transformation({ user }) {
 
               <div className="card">
                 <h2>{t('comparison')}</h2>
-                <div style={{ marginBottom: '20px', padding: '15px', background: '#fff9e6', borderRadius: '8px', border: '1px solid #ffe066' }}>
-                  <p style={{ margin: '0 0 10px 0', fontSize: '0.95em', fontWeight: 'bold', color: '#996600' }}>
+                <div style={{ marginBottom: '20px', padding: '15px', background: 'var(--bg-tertiary)', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+                  <p style={{ margin: '0 0 10px 0', fontSize: '0.95em', fontWeight: 'bold', color: 'var(--accent-warning)' }}>
                     📊 {t('note')}: {t('whatAreWeComparing')}
                   </p>
-                  <ul style={{ margin: 0, paddingLeft: '20px', fontSize: '0.9em', color: '#666' }}>
+                  <ul style={{ margin: 0, paddingLeft: '20px', fontSize: '0.9em', color: 'var(--text-secondary)' }}>
                     <li><strong>{t('rawMilkSaleModule1')}</strong> {t('directSaleExplanation')}</li>
                     <li><strong>{t('transformationModule2')}</strong> {t('transformationExplanation')}</li>
                     <li><strong>{t('importantNote')}:</strong> {t('salesChannelsNote')}</li>
