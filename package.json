@@ -12,7 +12,8 @@
     "dev:server": "cd server && npm run dev",
     "dev:client": "cd client && npm run dev",
     "install:all": "npm install && cd server && npm install && cd ../client && npm install",
-    "build": "cd client && npm run build"
+    "build": "cd client && npm run build",
+    "vercel-build": "npm install && cd server && npm install && cd ../client && npm install --include=dev && npm run build"
   },
   "keywords": [
     "simulator",
@@ -23,6 +24,5 @@
   "license": "ISC",
   "devDependencies": {
     "concurrently": "^8.2.2"
-  },
-  "dependencies": {}
+  }
 }
