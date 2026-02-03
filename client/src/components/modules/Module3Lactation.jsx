@@ -268,7 +268,7 @@ function Module3Lactation({ user }) {
     if (!selectedScenario) {
       setAlertModal({
         isOpen: true,
-        message: t('pleaseSelectScenario') || 'Please select a scenario',
+        message: t('pleaseSelectScenario') || 'Por favor selecciona un escenario para guardar los resultados',
         type: 'info'
       });
       return;
@@ -277,7 +277,7 @@ function Module3Lactation({ user }) {
     if (!selectedBreed) {
       setAlertModal({
         isOpen: true,
-        message: 'Please select a breed',
+        message: t('pleaseSelectBreed') || 'Por favor selecciona una raza',
         type: 'info'
       });
       return;
@@ -356,56 +356,67 @@ function Module3Lactation({ user }) {
         </div>
       </header>
 
-      <div className="card">
-        <h2>{t('selectScenario')}</h2>
-        <select
-          value={selectedScenario?.id || ''}
-          onChange={(e) => {
-            const id = parseInt(e.target.value);
-            if (id) {
-              navigate(`/module3`, { state: { scenarioId: id }, replace: true });
-              loadScenario(id);
-            }
-          }}
-          style={{ marginBottom: '20px' }}
-        >
-          <option value="">{t('selectScenarioPlaceholder')}</option>
-          {scenarios.map(s => (
-            <option key={s.id} value={s.id}>{s.name}</option>
-          ))}
-        </select>
+      {/* Optional Scenario Selection - Only for saving results */}
+      <div className="card" style={{ marginBottom: '20px', padding: '16px', background: 'var(--bg-secondary)', borderRadius: '8px' }}>
+        <details>
+          <summary style={{ cursor: 'pointer', fontSize: '1rem', fontWeight: '500', color: 'var(--text-primary)', marginBottom: '8px' }}>
+            💾 {t('optionalSaveScenario') || 'Opcional: Guardar en un escenario'}
+          </summary>
+          <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '12px' }}>
+            {t('module3ScenarioNote') || 'El Módulo 3 funciona de forma independiente. Puedes guardar resultados en un escenario si lo deseas, pero no es necesario para usar el módulo.'}
+          </p>
+          <select
+            value={selectedScenario?.id || ''}
+            onChange={(e) => {
+              const id = parseInt(e.target.value);
+              if (id) {
+                navigate(`/module3`, { state: { scenarioId: id }, replace: true });
+                loadScenario(id);
+              } else {
+                setSelectedScenario(null);
+              }
+            }}
+            style={{ width: '100%', maxWidth: '400px' }}
+          >
+            <option value="">{t('selectScenarioPlaceholder') || 'Seleccionar escenario (opcional)'}</option>
+            {scenarios.map(s => (
+              <option key={s.id} value={s.id}>{s.name}</option>
+            ))}
+          </select>
+        </details>
       </div>
 
-      {selectedScenario && (
-        <>
-          {/* View Mode Selector */}
-          <div className="card">
-            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-              <button
-                className={`btn ${viewMode === 'single' ? 'btn-primary' : 'btn-secondary'}`}
-                onClick={() => setViewMode('single')}
-              >
-                📊 {t('singleBreedSimulation')}
-              </button>
-              <button
-                className={`btn ${viewMode === 'compare' ? 'btn-primary' : 'btn-secondary'}`}
-                onClick={() => setViewMode('compare')}
-              >
-                ⚖️ {t('compareAvsB')}
-              </button>
-              <button
-                className={`btn ${viewMode === 'ranking' ? 'btn-primary' : 'btn-secondary'}`}
-                onClick={() => setViewMode('ranking')}
-              >
-                🏆 {t('ranking')}
-              </button>
-            </div>
-          </div>
+      {/* View Mode Selector */}
+      <div className="card">
+        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+          <button
+            className={`btn ${viewMode === 'single' ? 'btn-primary' : 'btn-secondary'}`}
+            onClick={() => setViewMode('single')}
+          >
+            📊 {t('singleBreedSimulation')}
+          </button>
+          <button
+            className={`btn ${viewMode === 'compare' ? 'btn-primary' : 'btn-secondary'}`}
+            onClick={() => setViewMode('compare')}
+          >
+            ⚖️ {t('compareAvsB')}
+          </button>
+          <button
+            className={`btn ${viewMode === 'ranking' ? 'btn-primary' : 'btn-secondary'}`}
+            onClick={() => setViewMode('ranking')}
+          >
+            🏆 {t('ranking')}
+          </button>
+        </div>
+      </div>
 
-          {/* Single Breed View */}
-          {viewMode === 'single' && (
-            <div className="card">
-              <h2>🐐 {t('singleBreedSimulation')}</h2>
+      {/* Main Content - No longer requires selectedScenario */}
+      <>
+
+        {/* Single Breed View */}
+        {viewMode === 'single' && (
+          <div className="card">
+            <h2 style={{ fontSize: '1.5rem', fontWeight: '700', marginBottom: '1.5rem' }}>🐐 {t('singleBreedSimulation')}</h2>
               
               <div className="form-group">
                 <label>{t('selectBreed')}</label>
@@ -542,45 +553,45 @@ function Module3Lactation({ user }) {
                 </button>
               </div>
 
-              {singleResult && (
-                <div style={{ marginTop: '30px' }}>
-                  <h2>{t('results')}</h2>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px' }}>
-                    <div style={{ padding: '15px', background: 'rgba(37, 99, 235, 0.1)', borderRadius: '8px', border: '1px solid var(--accent-info)', color: 'var(--text-primary)' }}>
-                      <h3 style={{ marginTop: 0, color: 'var(--text-primary)' }}>{t('perAnimalAnnual')}</h3>
-                      <p style={{ color: 'var(--text-primary)' }}><strong>{t('milk')}:</strong> {formatNumber(singleResult.milk_kg_yr)} kg {singleResult.approx_liters_note}</p>
-                      <p style={{ color: 'var(--text-primary)' }}><strong>{t('fat')}:</strong> {formatNumber(singleResult.fat_kg_yr)} kg ({formatNumber(singleResult.fat_pct, 2)}%)</p>
-                      <p style={{ color: 'var(--text-primary)' }}><strong>{t('protein')}:</strong> {formatNumber(singleResult.protein_kg_yr)} kg ({formatNumber(singleResult.protein_pct, 2)}%)</p>
-                      <p style={{ color: 'var(--text-primary)' }}><strong>{t('fat')} + {t('protein')}:</strong> {formatNumber(singleResult.fat_plus_protein_kg_yr)} kg</p>
-                      <p style={{ color: 'var(--text-primary)' }}><strong>ECM:</strong> {formatNumber(singleResult.ecm_kg_yr)} kg</p>
-                    </div>
-                    <div style={{ padding: '15px', background: 'rgba(22, 163, 74, 0.1)', borderRadius: '8px', border: '1px solid var(--accent-success)', color: 'var(--text-primary)' }}>
-                      <h3 style={{ marginTop: 0, color: 'var(--text-primary)' }}>{t('perAnimalLifetime')}</h3>
-                      <p style={{ color: 'var(--text-primary)' }}><strong>{t('milk')}:</strong> {formatNumber(singleResult.milk_kg_lifetime)} kg</p>
-                      <p style={{ color: 'var(--text-primary)' }}><strong>{t('fat')}:</strong> {formatNumber(singleResult.fat_kg_lifetime)} kg</p>
-                      <p style={{ color: 'var(--text-primary)' }}><strong>{t('protein')}:</strong> {formatNumber(singleResult.protein_kg_lifetime)} kg</p>
-                      <p style={{ color: 'var(--text-primary)' }}><strong>{t('fat')} + {t('protein')}:</strong> {formatNumber(singleResult.fat_plus_protein_kg_lifetime)} kg</p>
-                      <p style={{ color: 'var(--text-primary)' }}><strong>{t('ecmLifetime')}:</strong> {formatNumber(singleResult.ecm_kg_lifetime)} kg</p>
-                      <p style={{ color: 'var(--text-secondary)' }}><small>({formatNumber(singleResult.lactations_lifetime_avg, 1)} {t('lactationsPerLife')} × {formatNumber(singleResult.lact_days_avg, 0)} {t('days')})</small></p>
-                    </div>
-                    <div style={{ padding: '15px', background: 'rgba(234, 179, 8, 0.1)', borderRadius: '8px', border: '1px solid var(--accent-warning)', color: 'var(--text-primary)' }}>
-                      <h3 style={{ marginTop: 0, color: 'var(--text-primary)' }}>{t('herdTotal')} ({formatNumber(singleResult.herd_size, 0)} {t('animals')})</h3>
-                      <p style={{ color: 'var(--text-primary)' }}><strong>{t('totalMilkPerYear')}:</strong> {formatNumber(singleResult.milk_kg_yr_total)} kg</p>
-                      <p style={{ color: 'var(--text-primary)' }}><strong>{t('totalFatPerYear')}:</strong> {formatNumber(singleResult.fat_kg_yr_total)} kg</p>
-                      <p style={{ color: 'var(--text-primary)' }}><strong>{t('totalProteinPerYear')}:</strong> {formatNumber(singleResult.protein_kg_yr_total)} kg</p>
-                      <p style={{ color: 'var(--text-primary)' }}><strong>{t('totalECMPerYear')}:</strong> {formatNumber(singleResult.ecm_kg_yr_total)} kg</p>
-                      <p style={{ color: 'var(--text-primary)' }}><strong>{t('totalECMLifetime')}:</strong> {formatNumber(singleResult.ecm_kg_lifetime_total)} kg</p>
-                    </div>
+            {singleResult && (
+              <div style={{ marginTop: '30px' }}>
+                <h2 style={{ fontSize: '1.5rem', fontWeight: '700', marginBottom: '1.5rem' }}>{t('results')}</h2>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px' }}>
+                  <div style={{ padding: '20px', background: 'rgba(37, 99, 235, 0.1)', borderRadius: '8px', border: '1px solid var(--accent-info)', color: 'var(--text-primary)' }}>
+                    <h3 style={{ marginTop: 0, fontSize: '1.125rem', fontWeight: '600', color: 'var(--text-primary)', marginBottom: '1rem' }}>{t('perAnimalAnnual')}</h3>
+                    <p style={{ color: 'var(--text-primary)', fontSize: '1rem', marginBottom: '0.5rem' }}><strong style={{ fontSize: '1rem' }}>{t('milk')}:</strong> <span style={{ fontSize: '1.125rem', fontWeight: '600' }}>{formatNumber(singleResult.milk_kg_yr)} kg</span> {singleResult.approx_liters_note}</p>
+                    <p style={{ color: 'var(--text-primary)', fontSize: '1rem', marginBottom: '0.5rem' }}><strong style={{ fontSize: '1rem' }}>{t('fat')}:</strong> <span style={{ fontSize: '1.125rem', fontWeight: '600' }}>{formatNumber(singleResult.fat_kg_yr)} kg</span> ({formatNumber(singleResult.fat_pct, 2)}%)</p>
+                    <p style={{ color: 'var(--text-primary)', fontSize: '1rem', marginBottom: '0.5rem' }}><strong style={{ fontSize: '1rem' }}>{t('protein')}:</strong> <span style={{ fontSize: '1.125rem', fontWeight: '600' }}>{formatNumber(singleResult.protein_kg_yr)} kg</span> ({formatNumber(singleResult.protein_pct, 2)}%)</p>
+                    <p style={{ color: 'var(--text-primary)', fontSize: '1rem', marginBottom: '0.5rem' }}><strong style={{ fontSize: '1rem' }}>{t('fat')} + {t('protein')}:</strong> <span style={{ fontSize: '1.125rem', fontWeight: '600' }}>{formatNumber(singleResult.fat_plus_protein_kg_yr)} kg</span></p>
+                    <p style={{ color: 'var(--text-primary)', fontSize: '1rem', marginBottom: '0.5rem' }}><strong style={{ fontSize: '1rem' }}>ECM:</strong> <span style={{ fontSize: '1.125rem', fontWeight: '600' }}>{formatNumber(singleResult.ecm_kg_yr)} kg</span></p>
+                  </div>
+                  <div style={{ padding: '20px', background: 'rgba(22, 163, 74, 0.1)', borderRadius: '8px', border: '1px solid var(--accent-success)', color: 'var(--text-primary)' }}>
+                    <h3 style={{ marginTop: 0, fontSize: '1.125rem', fontWeight: '600', color: 'var(--text-primary)', marginBottom: '1rem' }}>{t('perAnimalLifetime')}</h3>
+                    <p style={{ color: 'var(--text-primary)', fontSize: '1rem', marginBottom: '0.5rem' }}><strong style={{ fontSize: '1rem' }}>{t('milk')}:</strong> <span style={{ fontSize: '1.125rem', fontWeight: '600' }}>{formatNumber(singleResult.milk_kg_lifetime)} kg</span></p>
+                    <p style={{ color: 'var(--text-primary)', fontSize: '1rem', marginBottom: '0.5rem' }}><strong style={{ fontSize: '1rem' }}>{t('fat')}:</strong> <span style={{ fontSize: '1.125rem', fontWeight: '600' }}>{formatNumber(singleResult.fat_kg_lifetime)} kg</span></p>
+                    <p style={{ color: 'var(--text-primary)', fontSize: '1rem', marginBottom: '0.5rem' }}><strong style={{ fontSize: '1rem' }}>{t('protein')}:</strong> <span style={{ fontSize: '1.125rem', fontWeight: '600' }}>{formatNumber(singleResult.protein_kg_lifetime)} kg</span></p>
+                    <p style={{ color: 'var(--text-primary)', fontSize: '1rem', marginBottom: '0.5rem' }}><strong style={{ fontSize: '1rem' }}>{t('fat')} + {t('protein')}:</strong> <span style={{ fontSize: '1.125rem', fontWeight: '600' }}>{formatNumber(singleResult.fat_plus_protein_kg_lifetime)} kg</span></p>
+                    <p style={{ color: 'var(--text-primary)', fontSize: '1rem', marginBottom: '0.5rem' }}><strong style={{ fontSize: '1rem' }}>{t('ecmLifetime')}:</strong> <span style={{ fontSize: '1.25rem', fontWeight: '700', color: 'var(--accent-success)' }}>{formatNumber(singleResult.ecm_kg_lifetime)} kg</span></p>
+                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', marginTop: '0.75rem' }}><small>({formatNumber(singleResult.lactations_lifetime_avg, 1)} {t('lactationsPerLife')} × {formatNumber(singleResult.lact_days_avg, 0)} {t('days')})</small></p>
+                  </div>
+                  <div style={{ padding: '20px', background: 'rgba(234, 179, 8, 0.1)', borderRadius: '8px', border: '1px solid var(--accent-warning)', color: 'var(--text-primary)' }}>
+                    <h3 style={{ marginTop: 0, fontSize: '1.125rem', fontWeight: '600', color: 'var(--text-primary)', marginBottom: '1rem' }}>{t('herdTotal')} ({formatNumber(singleResult.herd_size, 0)} {t('animals')})</h3>
+                    <p style={{ color: 'var(--text-primary)', fontSize: '1rem', marginBottom: '0.5rem' }}><strong style={{ fontSize: '1rem' }}>{t('totalMilkPerYear')}:</strong> <span style={{ fontSize: '1.125rem', fontWeight: '600' }}>{formatNumber(singleResult.milk_kg_yr_total)} kg</span></p>
+                    <p style={{ color: 'var(--text-primary)', fontSize: '1rem', marginBottom: '0.5rem' }}><strong style={{ fontSize: '1rem' }}>{t('totalFatPerYear')}:</strong> <span style={{ fontSize: '1.125rem', fontWeight: '600' }}>{formatNumber(singleResult.fat_kg_yr_total)} kg</span></p>
+                    <p style={{ color: 'var(--text-primary)', fontSize: '1rem', marginBottom: '0.5rem' }}><strong style={{ fontSize: '1rem' }}>{t('totalProteinPerYear')}:</strong> <span style={{ fontSize: '1.125rem', fontWeight: '600' }}>{formatNumber(singleResult.protein_kg_yr_total)} kg</span></p>
+                    <p style={{ color: 'var(--text-primary)', fontSize: '1rem', marginBottom: '0.5rem' }}><strong style={{ fontSize: '1rem' }}>{t('totalECMPerYear')}:</strong> <span style={{ fontSize: '1.125rem', fontWeight: '600' }}>{formatNumber(singleResult.ecm_kg_yr_total)} kg</span></p>
+                    <p style={{ color: 'var(--text-primary)', fontSize: '1rem', marginBottom: '0.5rem' }}><strong style={{ fontSize: '1rem' }}>{t('totalECMLifetime')}:</strong> <span style={{ fontSize: '1.25rem', fontWeight: '700', color: 'var(--accent-warning)' }}>{formatNumber(singleResult.ecm_kg_lifetime_total)} kg</span></p>
                   </div>
                 </div>
-              )}
+              </div>
+            )}
             </div>
           )}
 
-          {/* Compare A vs B View */}
-          {viewMode === 'compare' && (
-            <div className="card">
-              <h2>⚖️ {t('compareTwoBreeds')}</h2>
+        {/* Compare A vs B View */}
+        {viewMode === 'compare' && (
+          <div className="card">
+            <h2 style={{ fontSize: '1.5rem', fontWeight: '700', marginBottom: '1.5rem' }}>⚖️ {t('compareTwoBreeds')}</h2>
               
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '30px', marginBottom: '20px' }}>
                 {/* Breed A */}
@@ -720,81 +731,202 @@ function Module3Lactation({ user }) {
                 {loading ? t('comparing') : t('runComparison')}
               </button>
 
-              {comparisonResult && (
-                <div className="card" style={{ marginTop: '30px' }}>
-                  {/* Informational Text Box */}
+            {comparisonResult && (
+              <div className="card" style={{ marginTop: '30px' }}>
+                {/* Winner Highlight Box */}
+                <div style={{ 
+                  padding: '1.5rem', 
+                  background: comparisonResult.winner === 'A' ? 'rgba(37, 99, 235, 0.15)' : 'rgba(139, 92, 246, 0.15)', 
+                  borderRadius: '12px', 
+                  marginBottom: '2rem',
+                  border: `3px solid ${comparisonResult.winner === 'A' ? 'var(--accent-info)' : 'var(--chart-quaternary)'}`,
+                  textAlign: 'center'
+                }}>
+                  <div style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>🏆</div>
+                  <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.5rem', fontWeight: '700', color: 'var(--text-primary)' }}>
+                    {comparisonResult.winner === 'A' ? comparisonResult.aScenario.breed_name : comparisonResult.bScenario.breed_name}
+                  </h3>
+                  <p style={{ margin: '0 0 1rem 0', fontSize: '1.125rem', color: 'var(--text-secondary)', fontWeight: '600' }}>
+                    {t('winner') || 'Ganadora'}
+                  </p>
                   <div style={{ 
-                    padding: '1rem 1.5rem', 
-                    background: 'var(--bg-secondary)', 
-                    borderRadius: '8px', 
-                    marginBottom: '2rem',
-                    border: '1px solid var(--border-color)',
-                    display: 'flex',
-                    alignItems: 'flex-start',
-                    gap: '1rem'
+                    display: 'grid', 
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', 
+                    gap: '1rem',
+                    marginTop: '1rem'
                   }}>
-                    <span style={{ fontSize: '1.5rem' }}>🐐</span>
-                    <div style={{ flex: 1 }}>
-                      <p style={{ margin: 0, color: 'var(--text-primary)', fontSize: '0.9375rem', lineHeight: '1.6' }}>
-                        <strong>{comparisonResult.winner === 'A' ? comparisonResult.aScenario.breed_name : comparisonResult.bScenario.breed_name}</strong> genera +{formatNumber(Math.abs(comparisonResult.delta.ecm_kg_lifetime_total), 0)}kg (+{formatNumber(Math.abs(comparisonResult.ecmDeltaPercent), 1)}%) de ECM durante sus {formatNumber(comparisonResult.winner === 'A' ? comparisonResult.aScenario.lactations_lifetime_avg : comparisonResult.bScenario.lactations_lifetime_avg, 1)} lactancias promedio frente a {comparisonResult.winner === 'A' ? comparisonResult.bScenario.breed_name : comparisonResult.aScenario.breed_name}, resultando en más grasa y proteína acumulada en su vida productiva.
-                      </p>
+                    <div>
+                      <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
+                        {t('ecmAdvantage') || 'Ventaja ECM'}
+                      </div>
+                      <div style={{ fontSize: '1.5rem', fontWeight: '700', color: 'var(--accent-success)' }}>
+                        +{formatNumber(Math.abs(comparisonResult.delta.ecm_kg_lifetime_total), 0)} kg
+                      </div>
+                      <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
+                        (+{formatNumber(Math.abs(comparisonResult.ecmDeltaPercent), 1)}%)
+                      </div>
+                    </div>
+                    <div>
+                      <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
+                        {t('lactations') || 'Lactancias'}
+                      </div>
+                      <div style={{ fontSize: '1.5rem', fontWeight: '700', color: 'var(--text-primary)' }}>
+                        {formatNumber(comparisonResult.winner === 'A' ? comparisonResult.aScenario.lactations_lifetime_avg : comparisonResult.bScenario.lactations_lifetime_avg, 1)}
+                      </div>
                     </div>
                   </div>
+                </div>
 
-                  {/* Chart 1: Comparativa por Vida Productiva - Line Graph */}
-                  <div className="card" style={{ marginBottom: '1.5rem' }}>
-                    <h3 style={{ marginBottom: '1rem', fontSize: '1.125rem', fontWeight: '600' }}>
-                      {t('comparativeProductiveLife') || 'Comparativa por Vida Productiva'}
-                    </h3>
-                    <ResponsiveContainer width="100%" height={350}>
-                      <LineChart data={[
-                        { lactation: 'Lactancia 1', [comparisonResult.aScenario.breed_name]: comparisonResult.aScenario.ecm_per_lactation, [comparisonResult.bScenario.breed_name]: comparisonResult.bScenario.ecm_per_lactation },
-                        { lactation: 'Lactancia 2', [comparisonResult.aScenario.breed_name]: comparisonResult.aScenario.ecm_per_lactation, [comparisonResult.bScenario.breed_name]: comparisonResult.bScenario.ecm_per_lactation },
-                        { lactation: 'Lactancia 3', [comparisonResult.aScenario.breed_name]: comparisonResult.aScenario.ecm_per_lactation, [comparisonResult.bScenario.breed_name]: comparisonResult.bScenario.ecm_per_lactation },
-                        { lactation: 'Lactancia 5', [comparisonResult.aScenario.breed_name]: comparisonResult.aScenario.ecm_per_lactation * 5, [comparisonResult.bScenario.breed_name]: comparisonResult.bScenario.ecm_per_lactation * 5 },
-                        { lactation: `${formatNumber(comparisonResult.aScenario.lactations_lifetime_avg, 1)} Lactancias`, [comparisonResult.aScenario.breed_name]: comparisonResult.aScenario.ecm_kg_lifetime, [comparisonResult.bScenario.breed_name]: comparisonResult.bScenario.ecm_kg_lifetime },
-                        { lactation: `${formatNumber(comparisonResult.bScenario.lactations_lifetime_avg, 1)} años`, [comparisonResult.aScenario.breed_name]: comparisonResult.aScenario.ecm_kg_lifetime, [comparisonResult.bScenario.breed_name]: comparisonResult.bScenario.ecm_kg_lifetime }
-                      ]}>
-                        <CartesianGrid strokeDasharray="3 3" stroke={chartColors.grid} />
-                        <XAxis 
-                          dataKey="lactation" 
-                          stroke={chartColors.axis.tick}
-                          angle={-45}
-                          textAnchor="end"
-                          height={80}
-                        />
-                        <YAxis stroke={chartColors.axis.tick} />
-                        <Tooltip 
-                          formatter={(value, name) => [
-                            `${formatNumber(value, 0)} kg`,
-                            name
-                          ]}
-                          contentStyle={{ 
-                            backgroundColor: chartColors.tooltip.bg, 
-                            border: `1px solid ${chartColors.tooltip.border}`,
-                            color: chartColors.tooltip.text
-                          }} 
-                        />
-                        <Legend />
-                        <Line 
-                          type="monotone" 
-                          dataKey={comparisonResult.aScenario.breed_name} 
-                          stroke={chartColors.secondary} 
-                          strokeWidth={3}
-                          dot={{ r: 6 }}
-                          name={comparisonResult.aScenario.breed_name}
-                        />
-                        <Line 
-                          type="monotone" 
-                          dataKey={comparisonResult.bScenario.breed_name} 
-                          stroke={chartColors.primary} 
-                          strokeWidth={3}
-                          dot={{ r: 6 }}
-                          name={comparisonResult.bScenario.breed_name}
-                        />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  </div>
+                {/* Comprehensive Comparison Chart - Key Metrics Side by Side */}
+                <div className="card" style={{ marginBottom: '1.5rem' }}>
+                  <h3 style={{ marginBottom: '1.5rem', fontSize: '1.25rem', fontWeight: '700', color: 'var(--text-primary)' }}>
+                    {t('comprehensiveComparison') || 'Comparación Completa: Producción por Lactancia, Grasa, Proteína y Vida Productiva'}
+                  </h3>
+                  <ResponsiveContainer width="100%" height={400}>
+                    <ComposedChart data={[
+                      {
+                        metric: t('milkPerLactation') || 'Leche/Lactancia',
+                        [comparisonResult.aScenario.breed_name]: comparisonResult.aScenario.milk_kg_yr / (comparisonResult.aScenario.lact_days_avg / 365),
+                        [comparisonResult.bScenario.breed_name]: comparisonResult.bScenario.milk_kg_yr / (comparisonResult.bScenario.lact_days_avg / 365)
+                      },
+                      {
+                        metric: t('fatPercent') || '% Grasa',
+                        [comparisonResult.aScenario.breed_name]: comparisonResult.aScenario.fat_pct,
+                        [comparisonResult.bScenario.breed_name]: comparisonResult.bScenario.fat_pct
+                      },
+                      {
+                        metric: t('proteinPercent') || '% Proteína',
+                        [comparisonResult.aScenario.breed_name]: comparisonResult.aScenario.protein_pct,
+                        [comparisonResult.bScenario.breed_name]: comparisonResult.bScenario.protein_pct
+                      },
+                      {
+                        metric: t('ecmProductiveLife') || 'ECM Vida Productiva',
+                        [comparisonResult.aScenario.breed_name]: comparisonResult.aScenario.ecm_kg_lifetime,
+                        [comparisonResult.bScenario.breed_name]: comparisonResult.bScenario.ecm_kg_lifetime
+                      }
+                    ]}>
+                      <CartesianGrid strokeDasharray="3 3" stroke={chartColors.grid} />
+                      <XAxis 
+                        dataKey="metric" 
+                        stroke={chartColors.axis.tick}
+                        tick={{ fill: chartColors.text.primary, fontSize: 12, fontWeight: '500' }}
+                        angle={-15}
+                        textAnchor="end"
+                        height={100}
+                      />
+                      <YAxis 
+                        stroke={chartColors.axis.tick}
+                        tick={{ fill: chartColors.text.secondary, fontSize: 12 }}
+                      />
+                      <Tooltip 
+                        formatter={(value, name) => {
+                          const isPercent = name.includes('%') || (typeof value === 'number' && value < 10);
+                          return [`${formatNumber(value, isPercent ? 2 : 0)}${isPercent ? '%' : ' kg'}`, name];
+                        }}
+                        contentStyle={{ 
+                          backgroundColor: chartColors.tooltip.bg, 
+                          border: `1px solid ${chartColors.tooltip.border}`,
+                          color: chartColors.tooltip.text,
+                          borderRadius: '8px',
+                          padding: '12px'
+                        }} 
+                      />
+                      <Legend 
+                        wrapperStyle={{ paddingTop: '20px' }}
+                        iconType="roundRect"
+                      />
+                      <Bar 
+                        dataKey={comparisonResult.aScenario.breed_name} 
+                        fill={chartColors.secondary}
+                        radius={[8, 8, 0, 0]}
+                        name={comparisonResult.aScenario.breed_name}
+                      />
+                      <Bar 
+                        dataKey={comparisonResult.bScenario.breed_name} 
+                        fill={chartColors.primary}
+                        radius={[8, 8, 0, 0]}
+                        name={comparisonResult.bScenario.breed_name}
+                      />
+                    </ComposedChart>
+                  </ResponsiveContainer>
+                </div>
+
+                {/* Chart 2: Evolution by Lactation - Proper Curve from Lactation 1 */}
+                <div className="card" style={{ marginBottom: '1.5rem' }}>
+                  <h3 style={{ marginBottom: '1rem', fontSize: '1.25rem', fontWeight: '700', color: 'var(--text-primary)' }}>
+                    {t('evolutionByLactation') || 'Evolución Productiva por Lactancia'}
+                  </h3>
+                  <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>
+                    {t('lactationEvolutionNote') || 'Producción acumulada de ECM desde la lactancia 1 hasta el promedio de lactancias por raza'}
+                  </p>
+                  <ResponsiveContainer width="100%" height={400}>
+                    <LineChart data={(() => {
+                      const maxLactations = Math.max(
+                        Math.ceil(comparisonResult.aScenario.lactations_lifetime_avg),
+                        Math.ceil(comparisonResult.bScenario.lactations_lifetime_avg)
+                      );
+                      return Array.from({ length: maxLactations }, (_, i) => {
+                        const lactNum = i + 1;
+                        const aValue = lactNum <= comparisonResult.aScenario.lactations_lifetime_avg 
+                          ? comparisonResult.aScenario.ecm_per_lactation * lactNum 
+                          : null;
+                        const bValue = lactNum <= comparisonResult.bScenario.lactations_lifetime_avg 
+                          ? comparisonResult.bScenario.ecm_per_lactation * lactNum 
+                          : null;
+                        return {
+                          lactation: `L${lactNum}`,
+                          [comparisonResult.aScenario.breed_name]: aValue,
+                          [comparisonResult.bScenario.breed_name]: bValue
+                        };
+                      });
+                    })()}>
+                      <CartesianGrid strokeDasharray="3 3" stroke={chartColors.grid} />
+                      <XAxis 
+                        dataKey="lactation"
+                        stroke={chartColors.axis.tick}
+                        tick={{ fill: chartColors.text.primary, fontSize: 13, fontWeight: '500' }}
+                        label={{ value: t('lactationNumber') || 'Número de Lactancia', position: 'insideBottom', offset: -5, style: { textAnchor: 'middle', fill: chartColors.text.primary, fontSize: 14, fontWeight: '600' } }}
+                      />
+                      <YAxis 
+                        stroke={chartColors.axis.tick}
+                        tick={{ fill: chartColors.text.secondary, fontSize: 12 }}
+                        label={{ value: 'ECM Acumulado (kg)', angle: -90, position: 'insideLeft', style: { textAnchor: 'middle', fill: chartColors.text.primary, fontSize: 14, fontWeight: '600' } }}
+                      />
+                      <Tooltip 
+                        formatter={(value) => value !== null ? [`${formatNumber(value, 0)} kg ECM`, ''] : ['', '']}
+                        contentStyle={{ 
+                          backgroundColor: chartColors.tooltip.bg, 
+                          border: `1px solid ${chartColors.tooltip.border}`,
+                          color: chartColors.tooltip.text,
+                          borderRadius: '8px',
+                          padding: '12px'
+                        }} 
+                      />
+                      <Legend 
+                        wrapperStyle={{ paddingTop: '20px' }}
+                        iconType="line"
+                      />
+                      <Line 
+                        type="monotone" 
+                        dataKey={comparisonResult.aScenario.breed_name}
+                        stroke={chartColors.secondary} 
+                        strokeWidth={4}
+                        dot={{ r: 6, fill: chartColors.secondary }}
+                        name={`${comparisonResult.aScenario.breed_name} (${formatNumber(comparisonResult.aScenario.lactations_lifetime_avg, 1)} lactancias)`}
+                        connectNulls={false}
+                      />
+                      <Line 
+                        type="monotone" 
+                        dataKey={comparisonResult.bScenario.breed_name}
+                        stroke={chartColors.primary} 
+                        strokeWidth={4}
+                        dot={{ r: 6, fill: chartColors.primary }}
+                        name={`${comparisonResult.bScenario.breed_name} (${formatNumber(comparisonResult.bScenario.lactations_lifetime_avg, 1)} lactancias)`}
+                        connectNulls={false}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
 
                   {/* Charts 2 & 3: Fat and Protein - Side by Side */}
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1.5rem', marginBottom: '1.5rem' }}>
@@ -931,18 +1063,18 @@ function Module3Lactation({ user }) {
             </div>
           )}
 
-          {/* Ranking View */}
-          {viewMode === 'ranking' && rankingResults && (
-            <div className="chart-card">
-              <div className="chart-header">
-                <div>
-                  <h2 className="chart-title">
-                    <span className="chart-title-icon">🏆</span>
-                    {t('breedRankingByEcmLifetime')}
-                  </h2>
-                  <p className="chart-subtitle">{t('breedRankingSubtitle')}</p>
-                </div>
+        {/* Ranking View */}
+        {viewMode === 'ranking' && rankingResults && (
+          <div className="chart-card">
+            <div className="chart-header">
+              <div>
+                <h2 className="chart-title" style={{ fontSize: '1.75rem', fontWeight: '700' }}>
+                  <span className="chart-title-icon">🏆</span>
+                  {t('breedRankingByEcmLifetime')}
+                </h2>
+                <p className="chart-subtitle" style={{ fontSize: '1rem' }}>{t('breedRankingSubtitle')}</p>
               </div>
+            </div>
 
               {/* Breed Ranking Panel with Images */}
               <div className="breed-ranking-panel" style={{ marginBottom: '2rem' }}>
@@ -1114,259 +1246,7 @@ function Module3Lactation({ user }) {
             </div>
           )}
 
-          {/* Integrated Dashboard for Module 3 */}
-          {(comparisonResult || rankingResults) && (
-            <div className="chart-card">
-              <div className="chart-header">
-                <div>
-                  <h2 className="chart-title">
-                    <span className="chart-title-icon">🎯</span>
-                    {t('integratedDashboard') || 'Integrated Dashboard'}
-                  </h2>
-                  <p className="chart-subtitle">{t('dashboardDescription') || 'Comprehensive view of all metrics and charts for quick decision-making'}</p>
-                </div>
-              </div>
-
-              {comparisonResult && (
-                <>
-                  {/* Key Comparison Metrics */}
-                  <h3 style={{ marginBottom: '1rem', fontSize: '1.25rem', fontWeight: '600' }}>
-                    {t('breedComparison') || 'Breed Comparison'}: {comparisonResult.aScenario.breed_name} vs {comparisonResult.bScenario.breed_name}
-                  </h3>
-                  <div style={{ 
-                    display: 'grid', 
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
-                    gap: '1rem', 
-                    marginBottom: '2rem' 
-                  }}>
-                    <div style={{ 
-                      padding: '1.5rem', 
-                      background: 'var(--bg-secondary)', 
-                      borderRadius: '8px',
-                      border: '1px solid var(--border-color)'
-                    }}>
-                      <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
-                        {t('ecmPerLactation') || 'ECM per Lactation (kg)'}
-                      </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <div>
-                          <div style={{ fontSize: '1.5rem', fontWeight: '700', color: 'var(--text-primary)' }}>
-                            {comparisonResult.aScenario.ecm_per_lactation?.toFixed(2)}
-                          </div>
-                          <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                            {comparisonResult.aScenario.breed_name}
-                          </div>
-                        </div>
-                        <div style={{ fontSize: '1.25rem', color: 'var(--text-tertiary)' }}>vs</div>
-                        <div>
-                          <div style={{ fontSize: '1.5rem', fontWeight: '700', color: 'var(--text-primary)' }}>
-                            {comparisonResult.bScenario.ecm_per_lactation?.toFixed(2)}
-                          </div>
-                          <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                            {comparisonResult.bScenario.breed_name}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    <div style={{ 
-                      padding: '1.5rem', 
-                      background: 'var(--bg-secondary)', 
-                      borderRadius: '8px',
-                      border: '1px solid var(--border-color)'
-                    }}>
-                      <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
-                        {t('ecmProductiveLife') || 'ECM Productive Life (kg)'}
-                      </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <div>
-                          <div style={{ fontSize: '1.5rem', fontWeight: '700', color: 'var(--text-primary)' }}>
-                            {comparisonResult.aScenario.ecm_kg_lifetime?.toFixed(2)}
-                          </div>
-                          <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                            {comparisonResult.aScenario.breed_name}
-                          </div>
-                        </div>
-                        <div style={{ fontSize: '1.25rem', color: 'var(--text-tertiary)' }}>vs</div>
-                        <div>
-                          <div style={{ fontSize: '1.5rem', fontWeight: '700', color: 'var(--text-primary)' }}>
-                            {comparisonResult.bScenario.ecm_kg_lifetime?.toFixed(2)}
-                          </div>
-                          <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                            {comparisonResult.bScenario.breed_name}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Comparison Chart */}
-                  <div style={{ marginTop: '2rem' }}>
-                    <h3 style={{ marginBottom: '1rem', fontSize: '1.125rem', fontWeight: '600' }}>
-                      {t('productionComparison') || 'Production Comparison'}
-                    </h3>
-                    <ResponsiveContainer width="100%" height={350}>
-                      <BarChart data={[
-                        { 
-                          name: comparisonResult.aScenario.breed_name,
-                          'Milk (kg)': comparisonResult.aScenario.milk_per_lactation, 
-                          'Fat (kg)': comparisonResult.aScenario.fat_kg_per_lactation, 
-                          'Protein (kg)': comparisonResult.aScenario.protein_kg_per_lactation,
-                          'ECM (kg)': comparisonResult.aScenario.ecm_per_lactation
-                        },
-                        { 
-                          name: comparisonResult.bScenario.breed_name,
-                          'Milk (kg)': comparisonResult.bScenario.milk_per_lactation, 
-                          'Fat (kg)': comparisonResult.bScenario.fat_kg_per_lactation, 
-                          'Protein (kg)': comparisonResult.bScenario.protein_kg_per_lactation,
-                          'ECM (kg)': comparisonResult.bScenario.ecm_per_lactation
-                        }
-                      ]}>
-                        <CartesianGrid strokeDasharray="3 3" stroke={chartColors.grid} />
-                        <XAxis dataKey="name" stroke={chartColors.axis.tick} />
-                        <YAxis stroke={chartColors.axis.tick} />
-                        <Tooltip 
-                          contentStyle={{ 
-                            backgroundColor: chartColors.tooltip.bg, 
-                            border: `1px solid ${chartColors.tooltip.border}`,
-                            color: chartColors.tooltip.text
-                          }} 
-                        />
-                        <Legend />
-                        <Bar dataKey="Milk (kg)" fill={chartColors.primary} />
-                        <Bar dataKey="Fat (kg)" fill={chartColors.secondary} />
-                        <Bar dataKey="Protein (kg)" fill={chartColors.tertiary} />
-                        <Bar dataKey="ECM (kg)" fill={chartColors.quaternary} />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
-                </>
-              )}
-
-              {rankingResults && rankingResults.scenarios.length > 0 && (
-                <>
-                  <h3 style={{ marginTop: '2rem', marginBottom: '1rem', fontSize: '1.25rem', fontWeight: '600' }}>
-                    {t('bestProducer') || 'Mejor Productora - Visualización'}
-                  </h3>
-                  <p style={{ marginBottom: '1.5rem', color: 'var(--text-secondary)', fontSize: '0.9375rem' }}>
-                    {t('bestProducerDescription') || 'Gráfico de líneas mostrando la mejor productora y comparación con otras razas'}
-                  </p>
-                  
-                  {/* Line Chart for Best Producer */}
-                  <div className="card" style={{ marginBottom: '2rem' }}>
-                    <h4 style={{ marginBottom: '1rem', fontSize: '1.125rem', fontWeight: '600' }}>
-                      {t('ecmProductionOverLifetime') || 'Producción ECM a lo largo de la vida productiva'}
-                    </h4>
-                    <ResponsiveContainer width="100%" height={350}>
-                      <LineChart data={rankingResults.scenarios.slice(0, 10).map((breed, idx) => ({
-                        rank: idx + 1,
-                        breed: breed.breed_name,
-                        ecm: breed.ecm_kg_lifetime,
-                        milk: breed.milk_kg_yr * breed.lactations_lifetime_avg,
-                        fat: breed.fat_kg_yr * breed.lactations_lifetime_avg,
-                        protein: breed.protein_kg_yr * breed.lactations_lifetime_avg
-                      }))}>
-                        <CartesianGrid strokeDasharray="3 3" stroke={chartColors.grid} />
-                        <XAxis 
-                          dataKey="breed" 
-                          stroke={chartColors.axis.tick}
-                          angle={-45}
-                          textAnchor="end"
-                          height={100}
-                        />
-                        <YAxis stroke={chartColors.axis.tick} />
-                        <Tooltip 
-                          formatter={(value, name) => {
-                            const labels = {
-                              ecm: 'ECM (kg)',
-                              milk: 'Leche (kg)',
-                              fat: 'Grasa (kg)',
-                              protein: 'Proteína (kg)'
-                            };
-                            return [`${formatNumber(value, 0)}`, labels[name] || name];
-                          }}
-                          contentStyle={{ 
-                            backgroundColor: chartColors.tooltip.bg, 
-                            border: `1px solid ${chartColors.tooltip.border}`,
-                            color: chartColors.tooltip.text
-                          }} 
-                        />
-                        <Legend />
-                        <Line 
-                          type="monotone" 
-                          dataKey="ecm" 
-                          stroke={chartColors.primary} 
-                          strokeWidth={3}
-                          dot={{ r: 5 }}
-                          name="ECM Vida Productiva (kg)"
-                        />
-                        <Line 
-                          type="monotone" 
-                          dataKey="milk" 
-                          stroke={chartColors.secondary} 
-                          strokeWidth={2}
-                          strokeDasharray="5 5"
-                          dot={{ r: 4 }}
-                          name="Leche Total (kg)"
-                        />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  </div>
-
-                  {/* Best Producer Highlight */}
-                  {rankingResults.scenarios[0] && (
-                    <div style={{ 
-                      padding: '1.5rem', 
-                      background: 'rgba(22, 163, 74, 0.1)', 
-                      borderRadius: '8px',
-                      border: '2px solid var(--accent-success)',
-                      marginBottom: '2rem',
-                      color: 'var(--text-primary)'
-                    }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
-                        <span style={{ fontSize: '2rem' }}>🥇</span>
-                        <div>
-                          <h4 style={{ margin: 0, fontSize: '1.25rem', fontWeight: '700', color: 'var(--accent-success)' }}>
-                            {t('bestProducer') || 'Mejor Productora'}: {rankingResults.scenarios[0].breed_name}
-                          </h4>
-                          <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
-                            {rankingResults.scenarios[0].country_or_system || rankingResults.scenarios[0].validation_source}
-                          </p>
-                        </div>
-                      </div>
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '1rem' }}>
-                        <div>
-                          <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
-                            {t('ecmProductiveLife') || 'ECM Vida Productiva'}
-                          </div>
-                          <div style={{ fontSize: '1.5rem', fontWeight: '700', color: 'var(--text-primary)' }}>
-                            {formatNumber(rankingResults.scenarios[0].ecm_kg_lifetime, 0)} kg
-                          </div>
-                        </div>
-                        <div>
-                          <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
-                            {t('milkKgPerYear') || 'Leche (kg/año)'}
-                          </div>
-                          <div style={{ fontSize: '1.5rem', fontWeight: '700', color: 'var(--text-primary)' }}>
-                            {formatNumber(rankingResults.scenarios[0].milk_kg_yr, 0)} kg
-                          </div>
-                        </div>
-                        <div>
-                          <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
-                            {t('lactationsPerLife') || 'Lactancias'}
-                          </div>
-                          <div style={{ fontSize: '1.5rem', fontWeight: '700', color: 'var(--text-primary)' }}>
-                            {formatNumber(rankingResults.scenarios[0].lactations_lifetime_avg, 1)}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
-          )}
         </>
-      )}
 
       <AlertModal
         isOpen={alertModal.isOpen}

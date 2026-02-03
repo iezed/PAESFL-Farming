@@ -109,6 +109,12 @@ export function buildBreedScenario(breedRef, overrides = {}) {
   const milk_L_yr_approx = milk_kg_yr / 1.03;
   const milk_L_lifetime_approx = milk_L_yr_approx * lactations_lifetime_avg;
 
+  // Calculate per-lactation values (assuming one lactation per year for simplicity)
+  const ecm_per_lactation = ecm_kg_yr;
+  const milk_per_lactation = milk_kg_yr;
+  const fat_kg_per_lactation = fat_kg_yr;
+  const protein_kg_per_lactation = protein_kg_yr;
+
   return {
     breed_key: breedRef.breed_key,
     breed_name: breedRef.breed_name,
@@ -131,6 +137,12 @@ export function buildBreedScenario(breedRef, overrides = {}) {
     protein_kg_yr,
     fat_plus_protein_kg_yr,
     ecm_kg_yr,
+    
+    // Per animal (per lactation)
+    ecm_per_lactation,
+    milk_per_lactation,
+    fat_kg_per_lactation,
+    protein_kg_per_lactation,
     
     // Per animal (lifetime)
     milk_kg_lifetime: milk_kg_yr * lactations_lifetime_avg,

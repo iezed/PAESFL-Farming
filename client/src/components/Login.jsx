@@ -12,6 +12,7 @@ function Login({ onLogin }) {
   const [country, setCountry] = useState('');
   const [isRegister, setIsRegister] = useState(false);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
@@ -19,6 +20,7 @@ function Login({ onLogin }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setSuccess('');
     setLoading(true);
 
     try {
@@ -28,8 +30,25 @@ function Login({ onLogin }) {
         : { email, password };
 
       const response = await api.post(endpoint, payload);
-      onLogin(response.data.user, response.data.token);
-      navigate('/dashboard');
+      
+      if (isRegister) {
+        // Show success message for registration
+        setSuccess(response.data.message || 'Registration successful! Please check your email to verify your account.');
+        // Don't auto-login, let user verify email first
+        setTimeout(() => {
+          setIsRegister(false);
+          setSuccess('');
+        }, 5000);
+      } else {
+        // Login - check email verification
+        const user = response.data.user;
+        if (!user.email_verified) {
+          setError('Please verify your email address before logging in. Check your inbox for the verification link.');
+          return;
+        }
+        onLogin(user, response.data.token);
+        navigate('/dashboard');
+      }
     } catch (err) {
       const errorMessage = err.response?.data?.error || err.message || t('loginError');
       setError(typeof errorMessage === 'string' ? errorMessage : t('loginError'));
@@ -77,6 +96,20 @@ function Login({ onLogin }) {
           {error && (
             <div className="login-error-message">
               {error}
+            </div>
+          )}
+
+          {success && (
+            <div style={{
+              padding: '12px 16px',
+              background: 'rgba(22, 163, 74, 0.1)',
+              border: '1px solid var(--accent-success)',
+              borderRadius: '8px',
+              color: 'var(--accent-success)',
+              marginBottom: '16px',
+              fontSize: '14px'
+            }}>
+              ✅ {success}
             </div>
           )}
 

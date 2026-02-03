@@ -23,6 +23,15 @@ DATABASE_URL=postgresql://postgres:[PASSWORD]@db.xxxxx.supabase.co:5432/postgres
 # JWT Secret (use a strong random string, minimum 32 characters)
 JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
 
+# SendGrid Email Service (for email verification)
+SENDGRID_API_KEY=SG.your-sendgrid-api-key-here
+SENDGRID_FROM_EMAIL=noreply@yourdomain.com
+
+# Application URL (for email links)
+# In production, this should be your actual domain
+# In development, use http://localhost:3000
+APP_URL=http://localhost:3000
+
 # Server Port (optional, defaults to 3001)
 PORT=3001
 
@@ -37,6 +46,9 @@ Set these in Vercel Dashboard → Project Settings → Environment Variables:
 ```
 DATABASE_URL=postgresql://postgres:[PASSWORD]@db.xxxxx.supabase.co:5432/postgres?sslmode=require
 JWT_SECRET=your-super-secret-jwt-key-minimum-32-characters
+SENDGRID_API_KEY=SG.your-sendgrid-api-key-here
+SENDGRID_FROM_EMAIL=noreply@yourdomain.com
+APP_URL=https://your-domain.vercel.app
 NODE_ENV=production
 PORT=3001
 ```

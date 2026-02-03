@@ -10,6 +10,7 @@ import Module2Transformation from './components/modules/Module2Transformation';
 import Module3Lactation from './components/modules/Module3Lactation';
 import Module4Yield from './components/modules/Module4Yield';
 import Module5Gestation from './components/modules/Module5Gestation';
+import VerifyEmail from './components/VerifyEmail';
 import { getAuthToken, setAuthToken, removeAuthToken, getUser, setUser as saveUserToStorage } from './utils/auth';
 import api from './utils/api';
 
@@ -81,6 +82,10 @@ function AppContent() {
           element={
             user ? <Navigate to="/dashboard" /> : <Login onLogin={handleLogin} />
           }
+        />
+        <Route
+          path="/verify-email"
+          element={<VerifyEmail />}
         />
         <Route
           path="/dashboard"

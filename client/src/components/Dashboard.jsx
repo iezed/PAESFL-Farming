@@ -16,11 +16,27 @@ function Dashboard({ user, onLogout }) {
   const [filterType, setFilterType] = useState('all');
   const [openMenuId, setOpenMenuId] = useState(null);
   const [deleteModal, setDeleteModal] = useState({ isOpen: false, scenarioId: null, scenarioName: '' });
+  const [resendingEmail, setResendingEmail] = useState(false);
+  const [emailResent, setEmailResent] = useState(false);
   const menuRefs = useRef({});
 
   useEffect(() => {
     loadScenarios();
   }, []);
+
+  const handleResendVerification = async () => {
+    setResendingEmail(true);
+    setEmailResent(false);
+    try {
+      await api.post('/auth/resend-verification');
+      setEmailResent(true);
+      setTimeout(() => setEmailResent(false), 5000);
+    } catch (error) {
+      alert(error.response?.data?.error || 'Failed to resend verification email');
+    } finally {
+      setResendingEmail(false);
+    }
+  };
 
   const loadScenarios = async () => {
     try {
@@ -201,6 +217,62 @@ function Dashboard({ user, onLogout }) {
 
   return (
     <div className="container">
+      {/* Email Verification Warning */}
+      {user && !user.email_verified && (
+        <div style={{
+          padding: '16px 20px',
+          background: 'rgba(234, 179, 8, 0.1)',
+          border: '2px solid var(--accent-warning)',
+          borderRadius: '8px',
+          marginBottom: '24px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: '12px'
+        }}>
+          <div style={{ flex: 1, minWidth: '250px' }}>
+            <div style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '12px',
+              marginBottom: '8px'
+            }}>
+              <span style={{ fontSize: '1.5rem' }}>⚠️</span>
+              <strong style={{ fontSize: '1.125rem', color: 'var(--text-primary)' }}>
+                Verifica tu correo electrónico
+              </strong>
+            </div>
+            <p style={{ 
+              margin: 0, 
+              color: 'var(--text-secondary)', 
+              fontSize: '0.9375rem',
+              lineHeight: '1.5'
+            }}>
+              Por favor verifica tu correo electrónico para tener acceso completo a todas las funcionalidades de la plataforma.
+              {emailResent && (
+                <span style={{ 
+                  display: 'block', 
+                  marginTop: '8px', 
+                  color: 'var(--accent-success)',
+                  fontWeight: '600'
+                }}>
+                  ✅ Email de verificación enviado. Revisa tu bandeja de entrada.
+                </span>
+              )}
+            </p>
+          </div>
+          <button
+            className="btn btn-secondary"
+            onClick={handleResendVerification}
+            disabled={resendingEmail || emailResent}
+            style={{ whiteSpace: 'nowrap' }}
+          >
+            {resendingEmail ? 'Enviando...' : emailResent ? 'Enviado ✓' : 'Reenviar Email'}
+          </button>
+        </div>
+      )}
+
       <div className="dashboard-header">
         <div>
           <h1 className="page-title">{t('myScenarios')}</h1>

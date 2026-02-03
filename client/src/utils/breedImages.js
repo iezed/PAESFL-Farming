@@ -19,9 +19,10 @@ export function getBreedImage(breedName) {
     'alpina francesa': '/breeds/ALPINE.png',
     'alpine': '/breeds/ALPINE.png',
     'alpina': '/breeds/ALPINE.png',
-    'saanen (genérica)': '/breeds/ALPINE.png', // Using Alpine as generic Saanen placeholder
+    'saanen (genérica)': '/breeds/ALPINE.png', // Note: SAANEN.png not available, using ALPINE as placeholder
     'saanen generica': '/breeds/ALPINE.png',
     'saanen genérica': '/breeds/ALPINE.png',
+    'saanen': '/breeds/ALPINE.png',
     'saanen americana': '/breeds/ALPINE.png',
     'saanen francesa': '/breeds/ALPINE.png',
     'saanen': '/breeds/ALPINE.png',
@@ -91,7 +92,9 @@ export function getBreedImage(breedName) {
     return '/breeds/ALPINE.png';
   }
   if (normalized.includes('saanen')) {
-    return '/breeds/ALPINE.png'; // Using Alpine as placeholder for Saanen
+    // Note: SAANEN.png image not available - using ALPINE as placeholder
+    // TODO: Add proper SAANEN.png image file
+    return '/breeds/ALPINE.png';
   }
   if (normalized.includes('lamancha') || normalized.includes('la-mancha')) {
     return '/breeds/LAMANCHA.png';
