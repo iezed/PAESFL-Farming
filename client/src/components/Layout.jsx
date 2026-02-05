@@ -17,8 +17,8 @@ function Sidebar({ user, onLogout }) {
     { path: '/module1', icon: '🥛', label: t('moduleTypes.milk_sale') },
     { path: '/module2', icon: '🧀', label: t('moduleTypes.transformation') },
     { path: '/module3', icon: '🐄', label: t('moduleTypes.lactation') },
-    { path: '/module4', icon: '📈', label: t('moduleTypes.yield') },
-    { path: '/module5', icon: '📋', label: t('moduleTypes.summary') },
+    // { path: '/module4', icon: '📈', label: t('moduleTypes.yield') },
+    // { path: '/module5', icon: '📋', label: t('moduleTypes.summary') },
   ];
 
   return (
